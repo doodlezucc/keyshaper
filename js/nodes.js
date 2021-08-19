@@ -1,3 +1,9 @@
+const sampleRate = 44100;
+
+let ctx = new AudioContext({
+    sampleRate: sampleRate
+});
+
 const controlsContainer = document.querySelector("#controls");
 
 class AudioSourceControls {
@@ -13,20 +19,29 @@ class AudioSourceControls {
     }
 }
 
+/**
+ * This callback is displayed as a global member.
+ * @callback NoteReleaseCallback
+ * @param {number} responseCode
+ * @param {string} responseMessage
+ */
+
 class PlayingNote {
     /**
-     * @param {number} note 
-     * @param {number} velocity 
-     * @param {AudioNode} chainEnd 
+     * @param {AudioNode} chainEnd
+     * @param {function()} [onRelease]
      */
-    constructor(note, velocity, chainEnd) {
-        this.note = note;
-        this.velocity = velocity;
+    constructor(chainEnd, onRelease) {
         this.chainEnd = chainEnd;
+        this.onRelease = onRelease;
     }
 
     end() {
-        this.chainEnd.disconnect();
+        if (!this.onRelease) {
+            this.chainEnd.disconnect();
+        } else {
+            this.onRelease();
+        }
     }
 }
 
@@ -59,7 +74,10 @@ class AudioSource {
             this._noteOff(note);
         }
         const player = this.createNotePlayer(note, velocity, this.gain);
-        this.notes[note] = new PlayingNote(note, velocity, player);
+        if (player) {
+            player.chainEnd.connect(this.gain);
+            this.notes[note] = player;
+        }
 
     }
 
@@ -70,8 +88,14 @@ class AudioSource {
         }
     }
 
-    createNotePlayer(note, velocity, destination) {
+    /**
+     * @param {number} note
+     * @param {number} velocity
+     * @returns {PlayingNote}
+     */
+    createNotePlayer(note, velocity) {
         console.error("Unhandled note player creation!");
+        return null;
     }
 }
 
@@ -81,12 +105,12 @@ class Oscillator extends AudioSource {
         this.type = "square";
         this.attack = 0;
         //this.hold = 0;
-        this.decay = 0.1;
-        this.sustain = 0.6;
-        this.release = 1;
+        this.decay = 0.04;
+        this.sustain = 0.8;
+        this.release = 0.2;
     }
 
-    createNotePlayer(note, velocity, destination) {
+    createNotePlayer(note, velocity) {
         //console.log("osci play " + note + " " + velocity);
 
         const osc = ctx.createOscillator();
@@ -101,11 +125,13 @@ class Oscillator extends AudioSource {
         //noteGain.gain.linearRampToValueAtTime(0, ctx.currentTime + this.attack + this.decay + this.release);
 
         osc.connect(noteGain);
-        noteGain.connect(destination);
-
         osc.start();
 
-        return noteGain;
+        return new PlayingNote(noteGain, () => {
+            noteGain.gain.cancelAndHoldAtTime(ctx.currentTime);
+            noteGain.gain.setValueAtTime(noteGain.gain.value, ctx.currentTime);
+            noteGain.gain.linearRampToValueAtTime(0, ctx.currentTime + this.release);
+        });
     }
 }
 

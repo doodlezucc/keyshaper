@@ -1,9 +1,3 @@
-const sampleRate = 44100;
-
-let ctx = new AudioContext({
-    sampleRate: sampleRate
-});
-
 let time1 = 0;
 let time2 = 0;
 
