@@ -2,11 +2,10 @@ const sampleRate = 44100;
 
 let time1 = 0;
 let time2 = 0;
+let isInitialized = false;
 
 /** @type {AudioSource} */
 let src;
-
-let isInitialized = false;
 
 window.onkeydown = (ev) => {
     time1 = Date.now();
@@ -21,15 +20,11 @@ function onMIDIFailure() {
 }
 
 function onMIDISuccess(midiAccess) {
-    console.log(midiAccess);
     for (var input of midiAccess.inputs.values()) {
-        console.log(input);
         input.onmidimessage = getMIDIMessage;
     }
 
     midiAccess.onstatechange = (ev) => {
-        console.log("connection change");
-        console.log(ev);
         ev.port.onmidimessage = getMIDIMessage;
     };
 }

@@ -12,21 +12,25 @@
 <body>
     <h1>KeyShaper</h1>
 
-    <div id="controls">
-
-    </div>
+    <div id="controls"></div>
 
     <template id="oscillator">
+        <h2>Oscillator</h2>
         <select>
-            <option value="sine"></option>
-            <option value="square"></option>
-            <option value="sawtooth"></option>
-            <option value="triangle"></option>
+            <option value="sine">Sine</option>
+            <option value="square">Square</option>
+            <option value="sawtooth">Sawtooth</option>
+            <option value="triangle">Triangle</option>
         </select>
+    </template>
+    <template id="drumpad">
+        <h2>Drum Pad</h2>
     </template>
 
     <script src="js/nodes.js"></script>
     <script src="js/index.js"></script>
+    <script src="js/sources/drumpad.js"></script>
+    <script src="js/sources/oscillator.js"></script>
 </body>
 
 </html>
