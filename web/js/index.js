@@ -48,5 +48,5 @@ async function onUserGesture() {
     });
     await ctx.resume();
 
-    src = new Oscillator();
+    src = new DrumPad();
 }
