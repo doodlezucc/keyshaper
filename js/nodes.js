@@ -1,8 +1,5 @@
-const sampleRate = 44100;
-
-let ctx = new AudioContext({
-    sampleRate: sampleRate
-});
+/** @type {AudioContext} */
+let ctx;
 
 const controlsContainer = document.querySelector("#controls");
 
@@ -12,19 +9,12 @@ class AudioSourceControls {
         this.elem = document.createElement("div");
 
         for (const child of template.children) {
-            this.elem.append(document.cloneNode(child));
+            this.elem.append(child.cloneNode(true));
         }
 
         controlsContainer.append(this.elem);
     }
 }
-
-/**
- * This callback is displayed as a global member.
- * @callback NoteReleaseCallback
- * @param {number} responseCode
- * @param {string} responseMessage
- */
 
 class PlayingNote {
     /**
