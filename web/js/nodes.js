@@ -59,7 +59,7 @@ class AudioSource {
         const note = ev[1];
         switch (type) {
             case 144:
-                return this._noteOn(note, ev[2]);
+                return this._noteOn(note, ev[2] / 127);
             case 128:
                 return this._noteOff(note);
             case 224:
@@ -80,7 +80,7 @@ class AudioSource {
     _pitchBend(amount) {
         this.pitchBend = amount;
         for (const note of this.notes) {
-            if (note) {
+            if (note && note.onPitchBend) {
                 note.onPitchBend(amount);
             }
         }
