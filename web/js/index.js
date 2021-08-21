@@ -7,7 +7,7 @@ let isInitialized = false;
 /** @type {AudioSource} */
 let src;
 
-window.onkeydown = (ev) => {
+document.onkeydown = (ev) => {
     time1 = Date.now();
     //console.log(time1);
     onUserGesture();
