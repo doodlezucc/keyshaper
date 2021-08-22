@@ -56,7 +56,7 @@ async function onUserGesture() {
     ctx = new AudioContext({
         sampleRate: sampleRate
     });
-    src = new DrumPad();
+    src = new Oscillator();
     ctx.resume();
 
     project.test();

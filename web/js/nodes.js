@@ -33,11 +33,10 @@ class PlayingNote {
     }
 
     async end(when) {
-        if (!this.onRelease) {
-            this.chainEnd.disconnect();
-        } else {
-            return await this.onRelease(when);
+        if (this.onRelease) {
+            await this.onRelease(when);
         }
+        this.chainEnd.disconnect();
     }
 }
 

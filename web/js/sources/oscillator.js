@@ -33,6 +33,9 @@ class Oscillator extends AudioSource {
             noteGain.gain.cancelAndHoldAtTime(when);
             noteGain.gain.setValueAtTime(noteGain.gain.value, when);
             noteGain.gain.linearRampToValueAtTime(0, when + this.release);
+            return new Promise((resolve) => {
+                setTimeout(resolve, this.release * 1000);
+            })
         });
     }
 }

@@ -1,7 +1,11 @@
+const playEntireSamples = true;
+
 class DrumPad extends AudioSource {
     constructor() {
         super("drumpad");
         this.triggers = [36, 38, 42, 46];
+
+        /** @type {AudioBuffer[]} */
         this.buffers = [];
         this.loadAudio(0, "resources/drums/eternitykick5.wav");
         this.loadAudio(1, "resources/drums/eternitysnare9.wav");
@@ -26,9 +30,9 @@ class DrumPad extends AudioSource {
             const trigger = this.triggers[i];
 
             if (note == trigger) {
-                console.log(note + " at " + start);
                 const sourceNode = ctx.createBufferSource();
-                sourceNode.buffer = this.buffers[i];
+                const buffer = this.buffers[i];
+                sourceNode.buffer = buffer;
 
                 const gainNode = ctx.createGain();
                 gainNode.gain.value = velocity;
@@ -38,7 +42,14 @@ class DrumPad extends AudioSource {
 
                 return new PlayingNote(gainNode,
                     (amount) => { }, // Unhandled pitch bending
-                    () => { }); // Prevent node disconnect
+                    () => new Promise((resolve) => {
+                        if (playEntireSamples) {
+                            // Prevent instant node disconnect
+                            setTimeout(resolve, 1000 * buffer.duration);
+                        } else {
+                            resolve();
+                        }
+                    }));
             }
         }
     }
