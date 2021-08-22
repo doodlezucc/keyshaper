@@ -1,5 +1,7 @@
 const sampleRate = 44100;
 
+const project = new Project();
+
 let time1 = 0;
 let time2 = 0;
 let isInitialized = false;
@@ -11,6 +13,14 @@ document.onkeydown = (ev) => {
     time1 = Date.now();
     //console.log(time1);
     onUserGesture();
+
+    if (ev.key == " ") {
+        if (project.isPaused) {
+            project.play();
+        } else {
+            project.pause();
+        }
+    }
 }
 
 navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
@@ -46,7 +56,11 @@ async function onUserGesture() {
     ctx = new AudioContext({
         sampleRate: sampleRate
     });
-    await ctx.resume();
-
     src = new DrumPad();
+    ctx.resume();
+
+    project.test();
+    setTimeout(() => {
+        project.play();
+    }, 1000);
 }

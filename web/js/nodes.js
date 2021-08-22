@@ -24,7 +24,7 @@ class PlayingNote {
     /**
      * @param {AudioNode} chainEnd
      * @param {function(number)} [onPitchBend]
-     * @param {function()} [onRelease]
+     * @param {function():Promise} [onRelease]
      */
     constructor(chainEnd, onPitchBend, onRelease) {
         this.chainEnd = chainEnd;
@@ -32,11 +32,11 @@ class PlayingNote {
         this.onRelease = onRelease;
     }
 
-    end() {
+    async end(when) {
         if (!this.onRelease) {
             this.chainEnd.disconnect();
         } else {
-            this.onRelease();
+            return await this.onRelease(when);
         }
     }
 }
@@ -59,19 +59,19 @@ class AudioSource {
         const note = ev[1];
         switch (type) {
             case 144:
-                return this._noteOn(note, ev[2] / 127);
+                return this._noteOn(note, ev[2] / 127, ctx.currentTime);
             case 128:
-                return this._noteOff(note);
+                return this._noteOff(note, ctx.currentTime);
             case 224:
                 return this._pitchBend(ev[2] / 63.5 - 1);
         }
     }
 
-    onBlur() {
+    onBlur(when) {
         this._pitchBend(0);
         for (const note of this.notes) {
             if (note) {
-                note.end();
+                note.end(when);
             }
         }
         this.notes = [];
@@ -86,12 +86,12 @@ class AudioSource {
         }
     }
 
-    _noteOn(note, velocity) {
+    _noteOn(note, velocity, when) {
         if (this.notes[note]) {
             // Already playing
-            this._noteOff(note);
+            this._noteOff(note, when);
         }
-        const player = this.createNotePlayer(note, velocity, this.gain);
+        const player = this.createNotePlayer(note, velocity, when);
         if (player) {
             player.onPitchBend(this.pitchBend);
             player.chainEnd.connect(this.gain);
@@ -100,9 +100,9 @@ class AudioSource {
 
     }
 
-    _noteOff(note) {
+    _noteOff(note, when) {
         if (this.notes[note]) {
-            this.notes[note].end();
+            this.notes[note].end(when);
             this.notes[note] = null;
         }
     }
@@ -112,7 +112,7 @@ class AudioSource {
      * @param {number} velocity
      * @returns {PlayingNote}
      */
-    createNotePlayer(note, velocity) {
+    createNotePlayer(note, velocity, when) {
         console.error("Unhandled note player creation!");
         return null;
     }

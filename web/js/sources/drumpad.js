@@ -12,7 +12,7 @@ class DrumPad extends AudioSource {
     loadAudio(slot, url) {
         const request = new XMLHttpRequest();
         request.onload = async (ev) => {
-            // console.log((100 * ev.loaded / ev.total).toFixed(1) + "%");
+            console.log((100 * ev.loaded / ev.total).toFixed(1) + "%");
             this.buffers[slot] = await ctx.decodeAudioData(request.response);
             console.log("Loaded sample in slot " + slot);
         }
@@ -21,11 +21,12 @@ class DrumPad extends AudioSource {
         request.send();
     }
 
-    createNotePlayer(note, velocity) {
+    createNotePlayer(note, velocity, start) {
         for (let i = 0; i < this.triggers.length; i++) {
             const trigger = this.triggers[i];
 
             if (note == trigger) {
+                console.log(note + " at " + start);
                 const sourceNode = ctx.createBufferSource();
                 sourceNode.buffer = this.buffers[i];
 
@@ -33,7 +34,7 @@ class DrumPad extends AudioSource {
                 gainNode.gain.value = velocity;
 
                 sourceNode.connect(gainNode);
-                sourceNode.start();
+                sourceNode.start(start);
 
                 return new PlayingNote(gainNode,
                     (amount) => { }, // Unhandled pitch bending

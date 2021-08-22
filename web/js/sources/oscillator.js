@@ -14,9 +14,7 @@ class Oscillator extends AudioSource {
         };
     }
 
-    createNotePlayer(note, velocity) {
-        const start = ctx.currentTime;
-
+    createNotePlayer(note, velocity, start) {
         const osc = ctx.createOscillator();
         osc.type = this.type;
         osc.frequency.value = midiToFrequency(note);
@@ -27,14 +25,14 @@ class Oscillator extends AudioSource {
         noteGain.gain.linearRampToValueAtTime(velocity * this.sustain, start + this.attack + this.decay);
 
         osc.connect(noteGain);
-        osc.start();
+        osc.start(start);
 
         return new PlayingNote(noteGain, (amount) => {
             osc.detune.value = amount * 200;
-        }, () => {
-            noteGain.gain.cancelAndHoldAtTime(ctx.currentTime);
-            noteGain.gain.setValueAtTime(noteGain.gain.value, ctx.currentTime);
-            noteGain.gain.linearRampToValueAtTime(0, ctx.currentTime + this.release);
+        }, (when) => {
+            noteGain.gain.cancelAndHoldAtTime(when);
+            noteGain.gain.setValueAtTime(noteGain.gain.value, when);
+            noteGain.gain.linearRampToValueAtTime(0, when + this.release);
         });
     }
 }
