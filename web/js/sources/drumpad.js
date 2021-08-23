@@ -16,7 +16,6 @@ class DrumPad extends AudioSource {
     loadAudio(slot, url) {
         const request = new XMLHttpRequest();
         request.onload = async (ev) => {
-            console.log((100 * ev.loaded / ev.total).toFixed(1) + "%");
             this.buffers[slot] = await ctx.decodeAudioData(request.response);
             console.log("Loaded sample in slot " + slot);
         }

@@ -17,7 +17,6 @@ body {
 
 h1, h2, h3 {
     margin: 0;
-    
 }
 
 .window {
@@ -28,4 +27,8 @@ h1, h2, h3 {
     gap: 16px;
     display: inline-flex;
     flex-direction: column;
+}
+
+.pattern {
+    background-color: #ffe0b7;
 }
