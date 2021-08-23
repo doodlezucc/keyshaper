@@ -1,11 +1,15 @@
 const frameLength = 60;
 
+const patternWidth = 300;
+const patternHeight = 100;
+
+const timelineCursor = document.getElementById("timelineCursor");
+
 class Project {
     constructor() {
         this.unitLength = 16 * 0.1875;
         /** @type {Pattern[]} */
         this.patterns = [];
-
         this.ctxStart = 0;
         this.lastFrame = -1;
         this.isPaused = true;
@@ -14,6 +18,32 @@ class Project {
                 this.bake();
             }
         }, frameLength - 5);
+
+
+        this.longestPattern = 1;
+        this.redrawTimelineGuides();
+
+        // 60 FPS redraws
+        setInterval(() => {
+            if (!this.isPaused) {
+                const diff = ctx.currentTime - this.ctxStart;
+                const x = patternWidth * ((diff / this.unitLength) % this.longestPattern);
+                timelineCursor.setAttribute("x1", x);
+                timelineCursor.setAttribute("x2", x);
+            }
+        }, 1000 / 60);
+    }
+
+    redrawTimelineGuides() {
+        const w = patternWidth / 4;
+        const subdivisions = 4;
+        const pattern = document.getElementById("pattern");
+        pattern.setAttribute("width", w);
+        for (let i = 1; i < subdivisions; i++) {
+            const x = w * i / subdivisions;
+            pattern.children.item(i).setAttribute("x1", x);
+            pattern.children.item(i).setAttribute("x2", x);
+        }
     }
 
     play() {
@@ -32,6 +62,8 @@ class Project {
         for (const pattern of this.patterns) {
             pattern.audioSource.onBlur();
         }
+        timelineCursor.setAttribute("x1", 0);
+        timelineCursor.setAttribute("x2", 0);
     }
 
     bake() {
@@ -60,8 +92,6 @@ class Project {
             new Note(36, 1, 10, 1),
             new Note(38, 1, 12, 1),
             new Note(36, 1, 13, 1),
-            new Note(42, 0.7, 14, 1),
-            new Note(42, 1, 15, 1),
         ];
         drumPattern.redrawElem();
         this.patterns.push(drumPattern);
@@ -70,8 +100,13 @@ class Project {
 
 class Pattern {
     constructor(audioSource, length = 1) {
-        this.elem = document.createElement("canvas");
-        this.elem.className = "pattern";
+        this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.elem.classList.add("pattern");
+
+        const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        background.setAttribute("width", patternWidth);
+        background.setAttribute("height", patternHeight);
+        this.elem.append(background);
 
         /** @type {AudioSource} */
         this.audioSource = audioSource;
@@ -83,14 +118,13 @@ class Pattern {
         this.scaling = 0.1875;
 
         this.redrawElem();
-        document.getElementById("patternContainer").append(this.elem);
+        document.getElementById("timeline").append(this.elem);
     }
 
     redrawElem() {
-        const w = this.elem.width;
-        const h = this.elem.height;
-        const g = this.elem.getContext("2d");
-        g.clearRect(0, 0, w, h);
+        while (this.elem.firstChild) {
+            this.elem.removeChild(this.elem.lastChild);
+        }
 
         if (this.notes.length) {
             const length = this.length * project.unitLength;
@@ -102,16 +136,18 @@ class Pattern {
                 if (note.pitch > max) max = note.pitch;
             }
 
-            g.fillStyle = "#111";
+            const w = patternWidth;
+            const h = patternHeight;
             const yDelta = Math.max(12, max - min);
 
             for (const note of this.notes) {
-                g.fillRect(
-                    w * this.scaling * note.start / length,
-                    h * (1 - (note.pitch - min + 1) / yDelta),
-                    w * this.scaling * note.length / length,
-                    h / yDelta
-                );
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", w * this.scaling * note.start / length);
+                rect.setAttribute("y", h * (1 - (note.pitch - min + 1) / yDelta));
+                rect.setAttribute("width", w * this.scaling * note.length / length);
+                rect.setAttribute("height", h / yDelta);
+                this.elem.append(rect);
+                rect.classList.add("pattern-note");
             }
         }
     }

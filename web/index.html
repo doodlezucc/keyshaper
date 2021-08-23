@@ -6,15 +6,26 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style/style.css">
-    <title>keyshaper</title>
+    <title>Keyshaper</title>
 </head>
 
 <body>
-    <h1>keyshaper</h1>
+    <h1>Keyshaper</h1>
 
     <div id="controls"></div>
 
-    <div id="patternContainer"></div>
+    <svg id="timeline" width="100%" height="500px">
+        <defs>
+            <pattern id="pattern" patternUnits="userSpaceOnUse" width="100" height="10">
+                <line y2="100" stroke-width="2px" />
+                <line y2="100" stroke-width="0.3px" x="25" />
+                <line y2="100" stroke-width="0.3px" x="50" />
+                <line y2="100" stroke-width="0.3px" x="75" />
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#pattern)"></rect>
+        <line id="timelineCursor" y2="100%"></line>
+    </svg>
 
     <template id="oscillator">
         <h2>Oscillator</h2>

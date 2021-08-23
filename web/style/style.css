@@ -29,6 +29,24 @@ h1, h2, h3 {
     flex-direction: column;
 }
 
+#timeline {
+    background-color: #444;
+    border-radius: 10px;
+    gap: 4px;
+    display: inline-flex;
+    box-sizing: border-box;
+}
+
+#timeline line {
+    stroke: #aaa;
+}
+
 .pattern {
-    background-color: #ffe0b7;
+    fill: burlywood;
+    width: 300px;
+    height: 100px;
+}
+
+.pattern-note {
+    fill: #111;
 }
