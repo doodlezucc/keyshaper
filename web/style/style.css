@@ -38,15 +38,12 @@ h1, h2, h3 {
 }
 
 #timeline line {
-    stroke: #aaa;
+    stroke: #fff;
 }
 
-.pattern {
-    fill: burlywood;
-    width: 300px;
-    height: 100px;
+.pattern-background {
+    fill: #ffcca27a;
 }
-
 .pattern-note {
     fill: #111;
 }

@@ -10,8 +10,11 @@ class Project {
         this.unitLength = 16 * 0.1875;
         /** @type {Pattern[]} */
         this.patterns = [];
+        this.currentPattern = 0;
         this.ctxStart = 0;
         this.lastFrame = -1;
+        this.isRecording = true;
+
         this.isPaused = true;
         setInterval(() => {
             if (!this.isPaused) {
@@ -60,7 +63,7 @@ class Project {
         console.log("Pause");
 
         for (const pattern of this.patterns) {
-            pattern.audioSource.onBlur();
+            pattern.audioSource.onBlur(ctx.currentTime);
         }
         timelineCursor.setAttribute("x1", 0);
         timelineCursor.setAttribute("x2", 0);
@@ -93,20 +96,29 @@ class Project {
             new Note(38, 1, 12, 1),
             new Note(36, 1, 13, 1),
         ];
+        drumPattern.scaling = 0.1875;
         drumPattern.redrawElem();
         this.patterns.push(drumPattern);
+
+        const oscPattern = new Pattern(new Oscillator());
+        oscPattern.length = 1;
+        oscPattern.redrawElem();
+        this.patterns.push(oscPattern);
+        this.currentPattern = 1;
     }
 }
 
 class Pattern {
     constructor(audioSource, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        this.elem.classList.add("pattern");
 
-        const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        background.setAttribute("width", patternWidth);
-        background.setAttribute("height", patternHeight);
-        this.elem.append(background);
+        const off = patternHeight * project.patterns.length;
+        this.elem.setAttribute("transform", "translate(0, " + off + ")");
+
+        this.background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        this.background.setAttribute("height", patternHeight);
+        this.background.classList.add("pattern-background");
+        this.elem.append(this.background);
 
         /** @type {AudioSource} */
         this.audioSource = audioSource;
@@ -115,14 +127,25 @@ class Pattern {
         /** @type {Note[]} */
         this.notes = [];
 
-        this.scaling = 0.1875;
+        this.scaling = 1;
 
         this.redrawElem();
-        document.getElementById("timeline").append(this.elem);
+        document.getElementById("timeline").prepend(this.elem);
+    }
+
+    registerNote(pitch, velocity, when) {
+        const time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
+        this.notes.push(new Note(pitch, velocity, time, 0.1));
+        this.redrawElem();
     }
 
     redrawElem() {
-        while (this.elem.firstChild) {
+        if (this.length > project.longestPattern) {
+            project.longestPattern = this.length;
+        }
+        this.background.setAttribute("width", patternWidth * this.length);
+
+        while (this.elem.childElementCount > 1) {
             this.elem.removeChild(this.elem.lastChild);
         }
 
@@ -136,7 +159,7 @@ class Pattern {
                 if (note.pitch > max) max = note.pitch;
             }
 
-            const w = patternWidth;
+            const w = patternWidth * this.length;
             const h = patternHeight;
             const yDelta = Math.max(12, max - min);
 

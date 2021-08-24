@@ -58,11 +58,11 @@ class AudioSource {
         const note = ev[1];
         switch (type) {
             case 144:
-                return this._noteOn(note, ev[2] / 127, ctx.currentTime);
+                return this._noteOn(note, ev[2] / 127, ctx.currentTime, project.isRecording);
             case 128:
-                return this._noteOff(note, ctx.currentTime);
+                return this._noteOff(note, ctx.currentTime, project.isRecording);
             case 224:
-                return this._pitchBend(ev[2] / 63.5 - 1);
+                return this._pitchBend(ev[2] / 63.5 - 1, project.isRecording);
         }
     }
 
@@ -85,7 +85,7 @@ class AudioSource {
         }
     }
 
-    _noteOn(note, velocity, when) {
+    _noteOn(note, velocity, when, doRecord) {
         if (this.notes[note]) {
             // Already playing
             this._noteOff(note, when);
@@ -97,9 +97,12 @@ class AudioSource {
             this.notes[note] = player;
         }
 
+        if (doRecord && !project.isPaused) {
+            project.patterns[project.currentPattern].registerNote(note, velocity, when);
+        }
     }
 
-    _noteOff(note, when) {
+    _noteOff(note, when, doRecord) {
         if (this.notes[note]) {
             this.notes[note].end(when);
             this.notes[note] = null;

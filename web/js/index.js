@@ -56,10 +56,10 @@ async function onUserGesture() {
     ctx = new AudioContext({
         sampleRate: sampleRate
     });
-    src = new Oscillator();
     ctx.resume();
 
     project.test();
+    src = project.patterns[project.currentPattern].audioSource;
     setTimeout(() => {
         project.play();
     }, 1000);
