@@ -1,6 +1,6 @@
 const sampleRate = 44100;
 
-const project = new Project();
+let project = new Project();
 
 let time1 = 0;
 let time2 = 0;
@@ -19,6 +19,16 @@ document.onkeydown = (ev) => {
             project.play();
         } else {
             project.pause();
+        }
+    } else if (ev.ctrlKey) {
+        switch (ev.key) {
+            case "s":
+                project.save("project");
+                return ev.preventDefault();
+            case "l":
+                project.dispose();
+                project = Project.load("project");
+                return ev.preventDefault();
         }
     }
 }
@@ -61,6 +71,6 @@ async function onUserGesture() {
     project.test();
     src = project.patterns[project.currentPattern].audioSource;
     setTimeout(() => {
-        project.play();
+        // project.play();
     }, 1000);
 }

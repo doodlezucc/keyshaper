@@ -1,7 +1,7 @@
 class Oscillator extends AudioSource {
     constructor() {
         super("oscillator");
-        this.type = "sine";
+        this.oscType = "sine";
         this.attack = 0;
         //this.hold = 0;
         this.decay = 0.04;
@@ -10,13 +10,13 @@ class Oscillator extends AudioSource {
 
         const select = this.controls.elem.querySelector("select");
         select.oninput = () => {
-            this.type = select.value;
+            this.oscType = select.value;
         };
     }
 
     createNotePlayer(note, velocity, start) {
         const osc = ctx.createOscillator();
-        osc.type = this.type;
+        osc.type = this.oscType;
         osc.frequency.value = midiToFrequency(note);
 
         const noteGain = ctx.createGain();
@@ -37,5 +37,23 @@ class Oscillator extends AudioSource {
                 setTimeout(resolve, this.release * 1000);
             })
         });
+    }
+
+    paramsToJson() {
+        return {
+            "type": this.oscType,
+            "attack": this.attack,
+            "decay": this.decay,
+            "sustain": this.sustain,
+            "release": this.release,
+        };
+    }
+
+    paramsFromJson(j) {
+        this.oscType = j["type"];
+        this.attack = j["attack"];
+        this.decay = j["decay"];
+        this.sustain = j["sustain"];
+        this.release = j["release"];
     }
 }

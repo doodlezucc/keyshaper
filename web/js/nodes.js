@@ -3,11 +3,18 @@ let ctx;
 
 const controlsContainer = document.querySelector("#controls");
 
+let sourceLookup = {};
+
+window.addEventListener("load", () => {
+    sourceLookup = {
+        "oscillator": () => new Oscillator(),
+        "drumpad": () => new DrumPad(),
+    };
+})
+
 class AudioSourceControls {
     constructor(templateId) {
-        /**
-         * @type {HTMLTemplateElement}
-         */
+        /** @type {HTMLTemplateElement} */
         const template = document.getElementById(templateId);
         this.elem = document.createElement("div");
         this.elem.className = 'window ' + templateId;
@@ -42,6 +49,7 @@ class PlayingNote {
 
 class AudioSource {
     constructor(templateId) {
+        this.type = templateId;
         this.controls = new AudioSourceControls(templateId);
 
         this.gain = ctx.createGain();
@@ -117,6 +125,32 @@ class AudioSource {
     createNotePlayer(note, velocity, when) {
         console.error("Unhandled note player creation!");
         return null;
+    }
+
+    toJson() {
+        return {
+            "type": this.type,
+            "params": this.paramsToJson(),
+        };
+    }
+
+    static fromJson(j) {
+        const type = j["type"];
+        const obj = sourceLookup[type]();
+        obj.paramsFromJson(j["params"]);
+        return obj;
+    }
+
+    paramsToJson() {
+        return {};
+    }
+
+    paramsFromJson(j) { }
+
+    dispose() {
+        this.onBlur(ctx.currentTime);
+        this.gain.disconnect();
+        this.controls.elem.remove();
     }
 }
 

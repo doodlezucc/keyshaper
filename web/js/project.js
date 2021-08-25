@@ -8,6 +8,10 @@ const timelineCursor = document.getElementById("timelineCursor");
 class Project {
     constructor() {
         this.unitLength = 16 * 0.1875;
+
+        /** @type {AudioSource[]} */
+        this.audioSources = [];
+
         /** @type {Pattern[]} */
         this.patterns = [];
         this.currentPattern = 0;
@@ -21,7 +25,6 @@ class Project {
                 this.bake();
             }
         }, frameLength - 5);
-
 
         this.longestPattern = 1;
         this.redrawTimelineGuides();
@@ -86,7 +89,9 @@ class Project {
     }
 
     test() {
-        const drumPattern = new Pattern(new DrumPad());
+        this.audioSources.push(new DrumPad(), new Oscillator());
+
+        const drumPattern = new Pattern(0);
         drumPattern.notes = [
             new Note(36, 1, 0, 1),
             new Note(38, 1, 4, 1),
@@ -100,16 +105,51 @@ class Project {
         drumPattern.redrawElem();
         this.patterns.push(drumPattern);
 
-        const oscPattern = new Pattern(new Oscillator());
-        oscPattern.length = 1;
+        const oscPattern = new Pattern(1);
+        oscPattern.length = 2;
         oscPattern.redrawElem();
         this.patterns.push(oscPattern);
         this.currentPattern = 1;
     }
+
+    dispose() {
+        for (const source of this.audioSources) {
+            source.dispose();
+        }
+        for (const pattern of this.patterns) {
+            pattern.dispose();
+        }
+        this.isPaused = true;
+    }
+
+    save(name) {
+        const obj = {
+            "audioSources": this.audioSources.map(e => e.toJson()),
+            "patterns": this.patterns.map(e => e.toJson()),
+        };
+        console.log(obj);
+        if (!name) {
+            name = window.prompt("Enter a project name");
+        }
+        window.localStorage.setItem(name, JSON.stringify(obj));
+    }
+
+    static load(name) {
+        const j = JSON.parse(window.localStorage.getItem(name));
+        console.log(j);
+        const project = new Project();
+        for (const e of j["audioSources"]) {
+            project.audioSources.push(AudioSource.fromJson(e));
+        }
+        for (const e of j["patterns"]) {
+            project.patterns.push(Pattern.fromJson(e));
+        }
+        return project;
+    }
 }
 
 class Pattern {
-    constructor(audioSource, length = 1) {
+    constructor(audioSourceIndex, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
         const off = patternHeight * project.patterns.length;
@@ -120,8 +160,7 @@ class Pattern {
         this.background.classList.add("pattern-background");
         this.elem.append(this.background);
 
-        /** @type {AudioSource} */
-        this.audioSource = audioSource;
+        this.audioSourceIndex = audioSourceIndex;
 
         this.length = length;
         /** @type {Note[]} */
@@ -133,10 +172,19 @@ class Pattern {
         document.getElementById("timeline").prepend(this.elem);
     }
 
+    /** @type {AudioSource} */
+    get audioSource() {
+        return project.audioSources[this.audioSourceIndex];
+    }
+
     registerNote(pitch, velocity, when) {
         const time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
         this.notes.push(new Note(pitch, velocity, time, 0.1));
         this.redrawElem();
+    }
+
+    dispose() {
+        this.elem.remove();
     }
 
     redrawElem() {
@@ -218,6 +266,25 @@ class Pattern {
             this.audioSource._noteOff(note.pitch, when);
         }
     }
+
+    toJson() {
+        return {
+            "source": this.audioSourceIndex,
+            "length": this.length,
+            "scaling": this.scaling,
+            "notes": this.notes.map((note) => note.toJson()),
+        };
+    }
+
+    static fromJson(j) {
+        const pattern = new Pattern(j["source"], j["length"]);
+        pattern.scaling = j["scaling"];
+        for (const note of j["notes"]) {
+            pattern.notes.push(Note.fromJson(note));
+        }
+        pattern.redrawElem();
+        return pattern;
+    }
 }
 
 class Note {
@@ -230,5 +297,18 @@ class Note {
 
     get end() {
         return this.start + this.length;
+    }
+
+    static fromJson(j) {
+        return new Note(j["pitch"], j["velocity"], j["start"], j["length"]);
+    }
+
+    toJson() {
+        return {
+            "pitch": this.pitch,
+            "velocity": this.velocity,
+            "start": this.start,
+            "length": this.length,
+        };
     }
 }
