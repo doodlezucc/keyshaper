@@ -5,6 +5,7 @@ let project = new Project();
 let time1 = 0;
 let time2 = 0;
 let isInitialized = false;
+let recordOnInput = true;
 
 /** @type {AudioSource} */
 let src;
@@ -54,6 +55,10 @@ function getMIDIMessage(midiMessage) {
     time2 = Date.now();
     //console.log(time2 - time1);
 
+    if (recordOnInput && project.isPaused) {
+        project.isRecording = true;
+        project.play();
+    }
     if (src) {
         src.midi(midiMessage.data);
     }

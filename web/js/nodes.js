@@ -3,14 +3,10 @@ let ctx;
 
 const controlsContainer = document.querySelector("#controls");
 
-let sourceLookup = {};
-
-window.addEventListener("load", () => {
-    sourceLookup = {
-        "oscillator": () => new Oscillator(),
-        "drumpad": () => new DrumPad(),
-    };
-})
+let sourceLookup = {
+    "oscillator": () => new Oscillator(),
+    "drumpad": () => new DrumPad(),
+};
 
 class AudioSourceControls {
     constructor(templateId) {

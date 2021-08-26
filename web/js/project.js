@@ -151,6 +151,11 @@ class Project {
 class Pattern {
     constructor(audioSourceIndex, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.elem.onclick = (ev) => {
+            project.currentPattern = project.patterns.indexOf(this);
+            src = this.audioSource;
+            console.log("Selected pattern " + project.currentPattern);
+        };
 
         const off = patternHeight * project.patterns.length;
         this.elem.setAttribute("transform", "translate(0, " + off + ")");
@@ -160,12 +165,10 @@ class Pattern {
         this.background.classList.add("pattern-background");
         this.elem.append(this.background);
 
-        this.audioSourceIndex = audioSourceIndex;
-
-        this.length = length;
         /** @type {Note[]} */
         this.notes = [];
-
+        this.audioSourceIndex = audioSourceIndex;
+        this.length = length;
         this.scaling = 1;
 
         this.redrawElem();
@@ -214,7 +217,7 @@ class Pattern {
             for (const note of this.notes) {
                 const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
                 rect.setAttribute("x", w * this.scaling * note.start / length);
-                rect.setAttribute("y", h * (1 - (note.pitch - min + 1) / yDelta));
+                rect.setAttribute("y", h * (1 - (note.pitch - min + 1) / (yDelta + 1)));
                 rect.setAttribute("width", w * this.scaling * note.length / length);
                 rect.setAttribute("height", h / yDelta);
                 this.elem.append(rect);

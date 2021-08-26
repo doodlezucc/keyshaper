@@ -19,6 +19,10 @@ h1, h2, h3 {
     margin: 0;
 }
 
+.no-click {
+    pointer-events: none;
+}
+
 .window {
     background-color: #111;
     color: white;
