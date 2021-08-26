@@ -111,6 +111,10 @@ class AudioSource {
             this.notes[note].end(when);
             this.notes[note] = null;
         }
+
+        if (doRecord && !project.isPaused) {
+            project.patterns[project.currentPattern].finishRegisteringNote(note, when);
+        }
     }
 
     /**

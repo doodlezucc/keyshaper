@@ -167,6 +167,8 @@ class Pattern {
 
         /** @type {Note[]} */
         this.notes = [];
+        /** @type {Note[]} */
+        this.registering = [];
         this.audioSourceIndex = audioSourceIndex;
         this.length = length;
         this.scaling = 1;
@@ -182,7 +184,27 @@ class Pattern {
 
     registerNote(pitch, velocity, when) {
         const time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
-        this.notes.push(new Note(pitch, velocity, time, 0.1));
+        const note = new Note(pitch, velocity, time, 1000);
+        this.notes.push(note);
+        this.registering.push(note);
+        this.redrawElem();
+    }
+
+    finishRegisteringNote(pitch, when) {
+        let time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
+
+        this.registering.findIndex(note => note.pitch == pitch);
+        this.registering = this.registering.filter(note => {
+            if (note.pitch == pitch) {
+                if (note.start > time) {
+                    time = this.length * project.unitLength / this.scaling;
+                }
+                note.length = time - note.start;
+                return false;
+            }
+            return true;
+        });
+
         this.redrawElem();
     }
 
