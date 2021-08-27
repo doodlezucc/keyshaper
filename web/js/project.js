@@ -28,6 +28,7 @@ class Project {
 
         this.longestPattern = 1;
         this.redrawTimelineGuides();
+        this.zeroPatternsEvent();
 
         // 60 FPS redraws
         setInterval(() => {
@@ -38,6 +39,33 @@ class Project {
                 timelineCursor.setAttribute("x2", x);
             }
         }, 1000 / 60);
+    }
+
+    selectPattern(index) {
+        project.currentPattern = index;
+        src = project.patterns[project.currentPattern].audioSource;
+        console.log("Selected pattern " + project.currentPattern);
+    }
+
+    removeCurrentPattern() {
+        if (this.patterns.length) {
+            this.patterns[this.currentPattern].dispose();
+            this.patterns = this.patterns.filter((pattern, index) => {
+                return index != this.currentPattern;
+            });
+
+            if (this.patterns.length) {
+                this.selectPattern(this.currentPattern - 1);
+            } else {
+                this.zeroPatternsEvent();
+            }
+        }
+    }
+
+    zeroPatternsEvent() {
+        this.unitLength = 1000;
+        this.longestPattern = 1;
+        this.redrawTimelineGuides();
     }
 
     redrawTimelineGuides() {
@@ -152,9 +180,7 @@ class Pattern {
     constructor(audioSourceIndex, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
         this.elem.onclick = (ev) => {
-            project.currentPattern = project.patterns.indexOf(this);
-            src = this.audioSource;
-            console.log("Selected pattern " + project.currentPattern);
+            project.selectPattern(project.patterns.indexOf(this));
         };
 
         const off = patternHeight * project.patterns.length;

@@ -102,6 +102,9 @@ class AudioSource {
         }
 
         if (doRecord && !project.isPaused) {
+            if (!project.patterns.length) {
+                project.patterns.push(new Pattern(0, 1));
+            }
             project.patterns[project.currentPattern].registerNote(note, velocity, when);
         }
     }

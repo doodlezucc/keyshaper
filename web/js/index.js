@@ -15,11 +15,27 @@ document.onkeydown = (ev) => {
     //console.log(time1);
     onUserGesture();
 
+    if (ev.target instanceof HTMLInputElement) return;
+
     if (ev.key == " ") {
-        if (project.isPaused) {
-            project.play();
+        if (project.unitLength == 1000 && !project.isPaused && project.patterns.length == 1) {
+            project.unitLength = ctx.currentTime - project.ctxStart;
+            let bpm = 4 * 60 / project.unitLength;
+            if (bpm < 70) {
+                project.unitLength /= 2;
+                bpm *= 2;
+                project.patterns[0].length = 2;
+            }
+            project.redrawTimelineGuides();
+            project.patterns[0].redrawElem();
+
+            console.log("Set unit length to " + project.unitLength.toFixed(3) + " seconds, " + bpm.toFixed(1) + " BPM");
         } else {
-            project.pause();
+            if (project.isPaused) {
+                project.play();
+            } else {
+                project.pause();
+            }
         }
     } else if (ev.ctrlKey) {
         switch (ev.key) {
@@ -30,6 +46,19 @@ document.onkeydown = (ev) => {
                 project.dispose();
                 project = Project.load("project");
                 return ev.preventDefault();
+        }
+    } else {
+        switch (ev.key) {
+            case "Backspace":
+                project.removeCurrentPattern();
+                return ev.preventDefault();
+            case "o":
+                return project.audioSources.push(new Oscillator());
+            case "d":
+                return project.audioSources.push(new DrumPad());
+            case "p":
+                project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
+                return project.selectPattern(project.patterns.length - 1);
         }
     }
 }
@@ -73,8 +102,10 @@ async function onUserGesture() {
     });
     ctx.resume();
 
-    project.test();
-    src = project.patterns[project.currentPattern].audioSource;
+    // project.test();
+    // src = project.patterns[project.currentPattern].audioSource;
+    src = new DrumPad();
+    project.audioSources.push(src);
     setTimeout(() => {
         // project.play();
     }, 1000);
