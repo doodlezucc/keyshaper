@@ -12,6 +12,26 @@ class Oscillator extends AudioSource {
         select.oninput = () => {
             this.oscType = select.value;
         };
+        const inputs = this.controls.elem.querySelectorAll("input");
+        this.registerInput(inputs[0], (v) => { this.attack = v; });
+        this.registerInput(inputs[1], (v) => { this.decay = v; });
+        this.registerInput(inputs[2], (v) => { this.sustain = v; });
+        this.registerInput(inputs[3], (v) => { this.release = v; });
+        this.applyInputs();
+    }
+
+    registerInput(inp, cb) {
+        inp.oninput = () => cb(inp.valueAsNumber);
+    }
+
+    applyInputs() {
+        const select = this.controls.elem.querySelector("select");
+        select.value = this.oscType;
+        const inputs = this.controls.elem.querySelectorAll("input");
+        inputs[0].value = this.attack;
+        inputs[1].value = this.decay;
+        inputs[2].value = this.sustain;
+        inputs[3].value = this.release;
     }
 
     createNotePlayer(note, velocity, start) {
@@ -30,7 +50,7 @@ class Oscillator extends AudioSource {
         return new PlayingNote(noteGain, (amount) => {
             osc.detune.value = amount * 200;
         }, (when) => {
-            noteGain.gain.cancelAndHoldAtTime(when);
+            noteGain.gain.cancelAndHoldAtTime(when - 0.001);
             noteGain.gain.setValueAtTime(noteGain.gain.value, when);
             noteGain.gain.linearRampToValueAtTime(0, when + this.release);
             return new Promise((resolve) => {
