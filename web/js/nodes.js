@@ -50,7 +50,7 @@ class AudioSource {
 
         this.gain = ctx.createGain();
         this.gain.gain.value = 0.2;
-        this.gain.connect(ctx.destination);
+        this.gain.connect(project.effectChain.chainStart);
 
         /** @type {PlayingNote[]} */
         this.notes = [];
@@ -159,4 +159,61 @@ class AudioSource {
 
 function midiToFrequency(note) {
     return 440 * Math.pow(2, (note - 69) / 12);
+}
+
+class NodeChain {
+    constructor(chainStart, chainEnd) {
+        /** @type {AudioNode} */
+        this.chainStart = chainStart;
+        /** @type {AudioNode} */
+        this.chainEnd = chainEnd;
+    }
+}
+
+class AudioEffect extends NodeChain {
+    constructor(effectChain) {
+        super(effectChain.chainStart, effectChain.chainEnd);
+
+        /** @type {NodeChain} */
+        this.effectChain = effectChain;
+    }
+}
+
+class EffectChain extends NodeChain {
+    constructor() {
+        super(ctx.createGain(), ctx.createGain());
+
+        /** @type {AudioEffect[]} */
+        this.effects = [];
+        this.chainStart.connect(this.chainEnd);
+    }
+
+    /**
+     * @param {AudioEffect} effect
+     * @param {number} index
+     */
+    insert(effect, index) {
+        if (index == 0) {
+            if (this.effects.length) {
+                this.chainStart.disconnect(this.effects[0]);
+            } else {
+                this.chainStart.disconnect(this.chainEnd);
+            }
+            this.chainStart.connect(effect.chainStart);
+        } else {
+            this.effects[index - 1].chainEnd.disconnect(0);
+            this.effects[index - 1].chainEnd.connect(effect.chainStart);
+        }
+
+        if (index == this.effects.length) {
+            if (this.effects.length) {
+                this.chainEnd.disconnect(this.effects[index - 1]);
+            }
+            effect.chainEnd.connect(this.chainEnd);
+        } else if (index > 0) {
+            effect.chainEnd.connect(this.effects[index].chainStart);
+        }
+
+        this.effects.splice(index, 0, effect);
+    }
 }

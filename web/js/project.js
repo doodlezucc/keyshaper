@@ -7,10 +7,12 @@ const timelineCursor = document.getElementById("timelineCursor");
 
 class Project {
     constructor() {
-        this.unitLength = 16 * 0.1875;
+        this.unitLength = 1000;
 
         /** @type {AudioSource[]} */
         this.audioSources = [];
+        this.effectChain = new EffectChain();
+        this.effectChain.chainEnd.connect(ctx.destination);
 
         /** @type {Pattern[]} */
         this.patterns = [];
@@ -117,6 +119,7 @@ class Project {
     }
 
     test() {
+        this.unitLength = 3;
         this.audioSources.push(new DrumPad(), new Oscillator());
 
         const drumPattern = new Pattern(0);
@@ -137,7 +140,9 @@ class Project {
         oscPattern.length = 2;
         oscPattern.redrawElem();
         this.patterns.push(oscPattern);
-        this.currentPattern = 1;
+        this.selectPattern(1);
+
+        this.effectChain.insert(new Reverb(), 0);
     }
 
     dispose() {

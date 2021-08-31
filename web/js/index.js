@@ -1,11 +1,12 @@
 const sampleRate = 44100;
 
-let project = new Project();
+/** @type {Project} */
+let project;
 
 let time1 = 0;
 let time2 = 0;
 let isInitialized = false;
-let recordOnInput = true;
+let recordOnInput = false;
 
 /** @type {AudioSource} */
 let src;
@@ -21,10 +22,10 @@ document.onkeydown = (ev) => {
         if (project.unitLength == 1000 && !project.isPaused && project.patterns.length == 1) {
             project.unitLength = ctx.currentTime - project.ctxStart;
             let bpm = 4 * 60 / project.unitLength;
-            if (bpm < 70) {
+            while (bpm < 70) {
                 project.unitLength /= 2;
                 bpm *= 2;
-                project.patterns[0].length = 2;
+                project.patterns[0].length *= 2;
             }
             project.redrawTimelineGuides();
             project.patterns[0].redrawElem();
@@ -59,6 +60,9 @@ document.onkeydown = (ev) => {
             case "p":
                 project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
                 return project.selectPattern(project.patterns.length - 1);
+            case "r":
+                recordOnInput = !recordOnInput;
+                return console.log("Record on input: " + recordOnInput);
         }
     }
 }
@@ -102,10 +106,11 @@ async function onUserGesture() {
     });
     ctx.resume();
 
-    // project.test();
-    // src = project.patterns[project.currentPattern].audioSource;
-    src = new DrumPad();
-    project.audioSources.push(src);
+    project = new Project();
+    project.test();
+
+    // src = new DrumPad();
+    // project.audioSources.push(src);
     setTimeout(() => {
         // project.play();
     }, 1000);
