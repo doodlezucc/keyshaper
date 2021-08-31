@@ -41,10 +41,10 @@ class DrumPad extends AudioSource {
 
                 return new PlayingNote(gainNode,
                     (amount) => { }, // Unhandled pitch bending
-                    () => new Promise((resolve) => {
+                    (when) => new Promise((resolve) => {
                         if (playEntireSamples) {
                             // Prevent instant node disconnect
-                            setTimeout(resolve, 1000 * buffer.duration);
+                            setTimeout(resolve, 1000 * (when - ctx.currentTime + buffer.duration));
                         } else {
                             resolve();
                         }

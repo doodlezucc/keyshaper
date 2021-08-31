@@ -228,7 +228,7 @@ class Pattern {
         this.registering = this.registering.filter(note => {
             if (note.pitch == pitch) {
                 if (note.start > time) {
-                    time = this.length * project.unitLength / this.scaling;
+                    time += this.length * project.unitLength / this.scaling;
                 }
                 note.length = time - note.start;
                 return false;
@@ -289,27 +289,28 @@ class Pattern {
         for (const note of this.notes) {
             const nStart = note.start * this.scaling;
             const nEnd = note.end * this.scaling;
-            const when = loopStart + nStart;
+            const ctxNStart = loopStart + nStart;
+            const ctxNEnd = loopStart + nEnd;
 
             if (wrap) {
                 if (nStart >= wStart) {
-                    this._noteEvent(note, true, when);
+                    this._noteEvent(note, true, ctxNStart);
                 }
                 else if (nStart < wEnd) {
-                    this._noteEvent(note, true, when + loopTime);
+                    this._noteEvent(note, true, ctxNStart + loopTime);
                 }
                 if (nEnd >= wStart) {
-                    this._noteEvent(note, false, when);
+                    this._noteEvent(note, false, ctxNEnd);
                 }
                 else if (nEnd < wEnd) {
-                    this._noteEvent(note, false, when + loopTime);
+                    this._noteEvent(note, false, ctxNEnd + loopTime);
                 }
             } else {
                 if (nStart >= wStart && nStart < wEnd) {
-                    this._noteEvent(note, true, when);
+                    this._noteEvent(note, true, ctxNStart);
                 }
                 if (nEnd >= wStart && nEnd < wEnd) {
-                    this._noteEvent(note, false, when);
+                    this._noteEvent(note, false, ctxNEnd);
                 }
             }
         }
