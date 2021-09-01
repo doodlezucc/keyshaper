@@ -12,7 +12,8 @@
 <body>
     <h1>Keyshaper</h1>
 
-    <div id="controls"></div>
+    <div id="effects"></div>
+    <div id="sources"></div>
 
     <svg id="timeline" width="100%" height="500px">
         <defs>
@@ -42,6 +43,13 @@
     </template>
     <template id="drumpad">
         <h2>Drum Pad</h2>
+    </template>
+
+    <template id="reverb">
+        <h2>Reverb</h2>
+        <input type="range" min="0.01" max="5" step="0.01">
+        <input type="range" min="0" max="1" step="0.01">
+        <input type="range" min="0" max="1" step="0.01">
     </template>
 
     <script src="js/nodes.js"></script>

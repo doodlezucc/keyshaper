@@ -1,15 +1,16 @@
 /** @type {AudioContext} */
 let ctx;
 
-const controlsContainer = document.querySelector("#controls");
+const sourcesContainer = document.querySelector("#sources");
+const effectsContainer = document.querySelector("#effects");
 
 let sourceLookup = {
     "oscillator": () => new Oscillator(),
     "drumpad": () => new DrumPad(),
 };
 
-class AudioSourceControls {
-    constructor(templateId) {
+class ControlsWindow {
+    constructor(templateId, parent) {
         /** @type {HTMLTemplateElement} */
         const template = document.getElementById(templateId);
         this.elem = document.createElement("div");
@@ -19,7 +20,18 @@ class AudioSourceControls {
             this.elem.append(child.cloneNode(true));
         }
 
-        controlsContainer.append(this.elem);
+        parent.append(this.elem);
+    }
+}
+
+class AudioSourceControls extends ControlsWindow {
+    constructor(templateId) {
+        super(templateId, sourcesContainer);
+    }
+}
+class EffectControls extends ControlsWindow {
+    constructor(templateId) {
+        super(templateId, effectsContainer);
     }
 }
 
@@ -161,6 +173,10 @@ function midiToFrequency(note) {
     return 440 * Math.pow(2, (note - 69) / 12);
 }
 
+function registerInput(inp, cb) {
+    inp.oninput = () => cb(inp.valueAsNumber);
+}
+
 class NodeChain {
     constructor(chainStart, chainEnd) {
         /** @type {AudioNode} */
@@ -171,8 +187,10 @@ class NodeChain {
 }
 
 class AudioEffect extends NodeChain {
-    constructor(effectChain) {
+    constructor(type, effectChain) {
         super(effectChain.chainStart, effectChain.chainEnd);
+        this.type = type;
+        this.controls = new EffectControls(type);
 
         /** @type {NodeChain} */
         this.effectChain = effectChain;

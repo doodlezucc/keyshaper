@@ -13,15 +13,11 @@ class Oscillator extends AudioSource {
             this.oscType = select.value;
         };
         const inputs = this.controls.elem.querySelectorAll("input");
-        this.registerInput(inputs[0], (v) => { this.attack = v; });
-        this.registerInput(inputs[1], (v) => { this.decay = v; });
-        this.registerInput(inputs[2], (v) => { this.sustain = v; });
-        this.registerInput(inputs[3], (v) => { this.release = v; });
+        registerInput(inputs[0], (v) => { this.attack = v; });
+        registerInput(inputs[1], (v) => { this.decay = v; });
+        registerInput(inputs[2], (v) => { this.sustain = v; });
+        registerInput(inputs[3], (v) => { this.release = v; });
         this.applyInputs();
-    }
-
-    registerInput(inp, cb) {
-        inp.oninput = () => cb(inp.valueAsNumber);
     }
 
     applyInputs() {
