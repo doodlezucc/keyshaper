@@ -11,8 +11,8 @@ class Project {
 
         /** @type {AudioSource[]} */
         this.audioSources = [];
-        this.effectChain = new EffectChain();
-        this.effectChain.chainEnd.connect(ctx.destination);
+        this.effectRack = new EffectRack();
+        this.effectRack.chainEnd.connect(ctx.destination);
 
         /** @type {Pattern[]} */
         this.patterns = [];
@@ -136,19 +136,22 @@ class Project {
         drumPattern.redrawElem();
         this.patterns.push(drumPattern);
 
-        const oscPattern = new Pattern(1);
-        oscPattern.length = 2;
+        const oscPattern = new Pattern(1, 2);
         oscPattern.redrawElem();
         this.patterns.push(oscPattern);
         this.selectPattern(1);
 
-        this.effectChain.insert(new Reverb(), 0);
+        this.effectRack.insert(new Reverb(), 0);
     }
 
     dispose() {
         for (const source of this.audioSources) {
             source.dispose();
         }
+        for (const effect of this.effectRack.effects) {
+            effect.dispose();
+        }
+        this.effectRack.chainEnd.disconnect(0);
         for (const pattern of this.patterns) {
             pattern.dispose();
         }
@@ -157,7 +160,9 @@ class Project {
 
     save(name) {
         const obj = {
+            "unitLength": this.unitLength,
             "audioSources": this.audioSources.map(e => e.toJson()),
+            "effectRack": this.effectRack.effects.map(e => e.toJson()),
             "patterns": this.patterns.map(e => e.toJson()),
         };
         console.log(obj);
@@ -171,8 +176,18 @@ class Project {
         const j = JSON.parse(window.localStorage.getItem(name));
         console.log(j);
         const project = new Project();
+        project.unitLength = j["unitLength"];
+
         for (const e of j["audioSources"]) {
-            project.audioSources.push(AudioSource.fromJson(e));
+            /** @type {AudioSource} */
+            const src = AudioSource.fromJson(e);
+            src.gain.disconnect(0);
+            src.gain.connect(project.effectRack.chainStart);
+            project.audioSources.push(src);
+        }
+        const jEffects = j["effectRack"] ?? [];
+        for (let i = 0; i < jEffects.length; i++) {
+            project.effectRack.insert(AudioEffect.fromJson(jEffects[i]), i);
         }
         for (const e of j["patterns"]) {
             project.patterns.push(Pattern.fromJson(e));

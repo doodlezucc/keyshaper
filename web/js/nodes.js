@@ -4,9 +4,10 @@ let ctx;
 const sourcesContainer = document.querySelector("#sources");
 const effectsContainer = document.querySelector("#effects");
 
-let sourceLookup = {
+let serializeLookup = {
     "oscillator": () => new Oscillator(),
     "drumpad": () => new DrumPad(),
+    "reverb": () => new Reverb(),
 };
 
 class ControlsWindow {
@@ -55,14 +56,40 @@ class PlayingNote {
     }
 }
 
-class AudioSource {
+class SerializableParams {
+    constructor(type) {
+        this.type = type;
+    }
+
+    toJson() {
+        return {
+            "type": this.type,
+            "params": this.paramsToJson(),
+        };
+    }
+
+    static fromJson(j) {
+        const type = j["type"];
+        const obj = serializeLookup[type]();
+        obj.paramsFromJson(j["params"]);
+        return obj;
+    }
+
+    paramsToJson() {
+        return {};
+    }
+
+    paramsFromJson(j) { }
+}
+
+class AudioSource extends SerializableParams {
     constructor(templateId) {
-        this.type = templateId;
+        super(templateId);
         this.controls = new AudioSourceControls(templateId);
 
         this.gain = ctx.createGain();
         this.gain.gain.value = 0.2;
-        this.gain.connect(project.effectChain.chainStart);
+        this.gain.connect(project.effectRack.chainStart);
 
         /** @type {PlayingNote[]} */
         this.notes = [];
@@ -142,26 +169,6 @@ class AudioSource {
         return null;
     }
 
-    toJson() {
-        return {
-            "type": this.type,
-            "params": this.paramsToJson(),
-        };
-    }
-
-    static fromJson(j) {
-        const type = j["type"];
-        const obj = sourceLookup[type]();
-        obj.paramsFromJson(j["params"]);
-        return obj;
-    }
-
-    paramsToJson() {
-        return {};
-    }
-
-    paramsFromJson(j) { }
-
     dispose() {
         this.onBlur(ctx.currentTime);
         this.gain.disconnect();
@@ -186,18 +193,22 @@ class NodeChain {
     }
 }
 
-class AudioEffect extends NodeChain {
+class AudioEffect extends SerializableParams {
+    /** @param {NodeChain} effectChain */
     constructor(type, effectChain) {
-        super(effectChain.chainStart, effectChain.chainEnd);
-        this.type = type;
-        this.controls = new EffectControls(type);
-
-        /** @type {NodeChain} */
+        super(type);
         this.effectChain = effectChain;
+        this.chainStart = effectChain.chainStart;
+        this.chainEnd = effectChain.chainEnd;
+        this.controls = new EffectControls(type);
+    }
+
+    dispose() {
+        this.controls.elem.remove();
     }
 }
 
-class EffectChain extends NodeChain {
+class EffectRack extends NodeChain {
     constructor() {
         super(ctx.createGain(), ctx.createGain());
 
@@ -233,5 +244,9 @@ class EffectChain extends NodeChain {
         }
 
         this.effects.splice(index, 0, effect);
+    }
+
+    append(effect) {
+        this.insert(effect, this.effects.length);
     }
 }

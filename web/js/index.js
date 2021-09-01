@@ -57,10 +57,12 @@ document.onkeydown = (ev) => {
                 return project.audioSources.push(new Oscillator());
             case "d":
                 return project.audioSources.push(new DrumPad());
+            case "r":
+                return project.effectRack.append(new Reverb());
             case "p":
                 project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
                 return project.selectPattern(project.patterns.length - 1);
-            case "r":
+            case "i":
                 recordOnInput = !recordOnInput;
                 return console.log("Record on input: " + recordOnInput);
         }

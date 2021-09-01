@@ -86,5 +86,6 @@ class Oscillator extends AudioSource {
         this.decay = j["decay"];
         this.sustain = j["sustain"];
         this.release = j["release"];
+        this.applyInputs();
     }
 }
