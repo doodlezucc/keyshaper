@@ -110,9 +110,43 @@ async function onUserGesture() {
     project = new Project();
     project.test();
 
-    // src = new DrumPad();
-    // project.audioSources.push(src);
     setTimeout(() => {
         // project.play();
     }, 1000);
 }
+
+function initSelect(selectId, emptyOptionName, lookup, cb) {
+    const select = document.getElementById(selectId);
+    const emptyOption = document.createElement("option");
+    emptyOption.value = "";
+    emptyOption.innerHTML = emptyOptionName;
+    select.append(emptyOption);
+
+    for (const key in lookup) {
+        const option = document.createElement("option");
+        option.value = key;
+        option.innerHTML = titleCase(key);
+        select.append(option);
+    }
+    select.oninput = () => {
+        const key = select.value;
+        cb(lookup[key]());
+        select.value = "";
+    }
+}
+
+function initSelects() {
+    initSelect("addEffect", "Add Effect...", effectLookup, e => project.effectRack.append(e));
+    initSelect("addSource", "Add Audio Source...", sourceLookup, e => project.audioSources.push(e));
+}
+
+/**
+ * Capitalizes the first letter of each word of `s`.
+ * @param {string} s
+ * @returns {string}
+ */
+function titleCase(s) {
+    return s.toLowerCase().split(" ").map(w => w.charAt(0).toUpperCase() + w.substring(1)).join(" ");
+}
+
+initSelects();

@@ -4,11 +4,13 @@ let ctx;
 const sourcesContainer = document.querySelector("#sources");
 const effectsContainer = document.querySelector("#effects");
 
-let serializeLookup = {
+let sourceLookup = {
     "oscillator": () => new Oscillator(),
     "drumpad": () => new DrumPad(),
-    "reverb": () => new Reverb(),
 };
+let effectLookup = {
+    "reverb": () => new Reverb(),
+}
 
 class ControlsWindow {
     constructor(templateId, parent) {
@@ -70,7 +72,11 @@ class SerializableParams {
 
     static fromJson(j) {
         const type = j["type"];
-        const obj = serializeLookup[type]();
+        let call = sourceLookup[type];
+        if (!call) {
+            call = effectLookup[type];
+        }
+        const obj = call();
         obj.paramsFromJson(j["params"]);
         return obj;
     }

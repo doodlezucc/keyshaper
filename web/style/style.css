@@ -19,18 +19,38 @@ h1, h2, h3 {
     margin: 0;
 }
 
+select {
+    border-radius: 4px;
+    font-family: inherit;
+    height: min-content;
+    background-color: white;
+    border: 1px solid #161616;
+    outline: none;
+    margin: 1px;
+}
+select:hover {
+    border: 2px solid #4261c5;
+    margin: 0;
+}
+
 .no-click {
     pointer-events: none;
 }
 
+.growable-list, .growable-list > div {
+    display: inline-flex;
+    gap: 4px;
+}
+
 .window {
-    background-color: #111;
+    background-color: #161616;
     color: white;
     border-radius: 10px;
     padding: 12px;
     gap: 16px;
     display: inline-flex;
     flex-direction: column;
+    height: max-content;
 }
 
 #timeline {
