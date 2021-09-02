@@ -44,8 +44,7 @@ document.onkeydown = (ev) => {
                 project.save("project");
                 return ev.preventDefault();
             case "l":
-                project.dispose();
-                project = Project.load("project");
+                Project.load("project");
                 return ev.preventDefault();
         }
     } else {

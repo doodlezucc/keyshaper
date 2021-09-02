@@ -173,17 +173,15 @@ class Project {
     }
 
     static load(name) {
+        project.dispose();
+
         const j = JSON.parse(window.localStorage.getItem(name));
         console.log(j);
-        const project = new Project();
+        project = new Project();
         project.unitLength = j["unitLength"];
 
         for (const e of j["audioSources"]) {
-            /** @type {AudioSource} */
-            const src = AudioSource.fromJson(e);
-            src.gain.disconnect(0);
-            src.gain.connect(project.effectRack.chainStart);
-            project.audioSources.push(src);
+            project.audioSources.push(AudioSource.fromJson(e));
         }
         const jEffects = j["effectRack"] ?? [];
         for (let i = 0; i < jEffects.length; i++) {
