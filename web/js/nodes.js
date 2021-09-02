@@ -10,6 +10,7 @@ let sourceLookup = {
 };
 let effectLookup = {
     "reverb": () => new Reverb(),
+    "delay": () => new Delay(),
 }
 
 class ControlsWindow {
@@ -241,9 +242,6 @@ class EffectRack extends NodeChain {
         }
 
         if (index == this.effects.length) {
-            if (this.effects.length) {
-                this.chainEnd.disconnect(this.effects[index - 1]);
-            }
             effect.chainEnd.connect(this.chainEnd);
         } else if (index > 0) {
             effect.chainEnd.connect(this.effects[index].chainStart);
