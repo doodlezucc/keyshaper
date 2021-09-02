@@ -149,4 +149,6 @@ function titleCase(s) {
     return s.toLowerCase().split(" ").map(w => w.charAt(0).toUpperCase() + w.substring(1)).join(" ");
 }
 
-initSelects();
+window.onload = () => {
+    initSelects();
+}

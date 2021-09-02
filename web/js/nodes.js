@@ -4,13 +4,14 @@ let ctx;
 const sourcesContainer = document.querySelector("#sources");
 const effectsContainer = document.querySelector("#effects");
 
-let sourceLookup = {
-    "oscillator": () => new Oscillator(),
-    "drumpad": () => new DrumPad(),
-};
-let effectLookup = {
-    "reverb": () => new Reverb(),
-    "delay": () => new Delay(),
+let sourceLookup = {};
+let effectLookup = {}
+
+function registerSource(id, call) {
+    sourceLookup[id] = call;
+}
+function registerEffect(id, call) {
+    effectLookup[id] = call;
 }
 
 class ControlsWindow {

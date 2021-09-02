@@ -47,3 +47,5 @@ class Reverb extends AudioEffect {
         this.node.buffer = buffer;
     }
 }
+
+registerEffect("reverb", () => new Reverb());

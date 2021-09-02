@@ -89,3 +89,5 @@ class Oscillator extends AudioSource {
         this.applyInputs();
     }
 }
+
+registerSource("oscillator", () => new Oscillator());

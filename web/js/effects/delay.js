@@ -39,3 +39,5 @@ class Delay extends AudioEffect {
         inputs[3].value = this.wetGain.gain.value;
     }
 }
+
+registerEffect("delay", () => new Delay());

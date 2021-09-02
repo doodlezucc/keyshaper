@@ -53,3 +53,5 @@ class DrumPad extends AudioSource {
         }
     }
 }
+
+registerSource("drumpad", () => new DrumPad());
