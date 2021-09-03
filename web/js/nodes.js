@@ -1,4 +1,4 @@
-/** @type {AudioContext} */
+/** @type {BaseAudioContext} */
 let ctx;
 
 const sourcesContainer = document.querySelector("#sources");
@@ -25,7 +25,9 @@ class ControlsWindow {
             this.elem.append(child.cloneNode(true));
         }
 
-        parent.append(this.elem);
+        if (!project.isRendering) {
+            parent.append(this.elem);
+        }
     }
 }
 

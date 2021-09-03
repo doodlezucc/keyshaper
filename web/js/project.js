@@ -19,6 +19,7 @@ class Project {
         this.currentPattern = 0;
         this.ctxStart = 0;
         this.lastFrame = -1;
+        this.isRendering = false;
         this.isRecording = true;
 
         this.isPaused = true;
@@ -142,6 +143,87 @@ class Project {
         this.selectPattern(1);
 
         this.effectRack.insert(new Reverb(), 0);
+    }
+
+    async render() {
+        this.pause();
+        this.isRendering = true;
+        console.log("Rendering...");
+
+        const length = this.unitLength * this.longestPattern;
+        const originalCtx = ctx;
+        ctx = new OfflineAudioContext({
+            length: length * sampleRate,
+            sampleRate: sampleRate,
+            numberOfChannels: 2,
+        });
+
+        const originalCtxStart = this.ctxStart;
+        this.ctxStart = 0;
+
+        const originalEffectRack = this.effectRack;
+        this.effectRack = new EffectRack();
+        this.effectRack.chainEnd.connect(ctx.destination);
+
+        for (const fx of originalEffectRack.effects) {
+            /** @type {AudioEffect} */
+            const newFX = effectLookup[fx.type]();
+            newFX.paramsFromJson(fx.paramsToJson());
+            this.effectRack.append(newFX);
+        }
+
+        const originalSources = this.audioSources;
+        this.audioSources = [];
+        for (const src of originalSources) {
+            /** @type {AudioSource} */
+            const newSource = sourceLookup[src.type]();
+            newSource.paramsFromJson(src.paramsToJson());
+            this.audioSources.push(newSource);
+        }
+
+        const step = frameLength / 1000;
+        for (let t = 0; t < length; t += step) {
+            const end = t + step;
+            for (const pattern of this.patterns) {
+                pattern.bake(t, end, this);
+            }
+        }
+
+        /** @type {AudioBuffer} */
+        const buffer = await ctx.startRendering();
+
+        const channelData = [];
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            channelData[ch] = buffer.getChannelData(ch);
+        }
+
+        const sendable = {
+            channels: channelData,
+            length: buffer.length,
+            sampleRate: buffer.sampleRate,
+        }
+
+        const converter = new Worker("js/converter.js");
+        const promise = new Promise(resolve => {
+            converter.onmessage = resolve;
+        })
+
+        converter.postMessage(["wav", sendable]);
+
+        /** @type {Blob} */
+        const result = (await promise).data;
+
+        const audioElem = document.createElement("audio");
+        audioElem.controls = true;
+        audioElem.src = URL.createObjectURL(result);
+        document.body.append(audioElem);
+
+        ctx = originalCtx;
+        this.ctxStart = originalCtxStart;
+        this.effectRack = originalEffectRack;
+        this.audioSources = originalSources;
+        this.isRendering = false;
+        console.log("Done!");
     }
 
     dispose() {

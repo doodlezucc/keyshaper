@@ -15,6 +15,11 @@ body {
     font-family: "Noto Sans";
 }
 
+body > div {
+    display: inline-flex;
+    gap: 4px;
+}
+
 h1, h2, h3 {
     margin: 0;
 }

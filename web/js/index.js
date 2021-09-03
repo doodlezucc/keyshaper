@@ -151,4 +151,9 @@ function titleCase(s) {
 
 window.onload = () => {
     initSelects();
+    document.getElementById("render").onclick = async function () {
+        this.disabled = true;
+        await project.render();
+        this.disabled = false;
+    }
 }
