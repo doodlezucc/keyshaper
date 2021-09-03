@@ -46,6 +46,23 @@ class Reverb extends AudioEffect {
         }
         this.node.buffer = buffer;
     }
+
+    paramsToJson() {
+        return {
+            "duration": this.duration,
+            "dry": this.dryGain.gain.value,
+            "wet": this.wetGain.gain.value,
+        }
+    }
+
+    paramsFromJson(j) {
+        if (!j["duration"]) return;
+
+        this.updateBuffer(j["duration"]);
+        this.dryGain.gain.value = j["dry"];
+        this.wetGain.gain.value = j["wet"];
+        this.applyInputs();
+    }
 }
 
 registerEffect("reverb", () => new Reverb());

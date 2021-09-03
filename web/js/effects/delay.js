@@ -38,6 +38,23 @@ class Delay extends AudioEffect {
         inputs[2].value = this.dryGain.gain.value;
         inputs[3].value = this.wetGain.gain.value;
     }
+
+    paramsToJson() {
+        return {
+            "time": this.node.delayTime.value,
+            "feedback": this.feedback.gain.value,
+            "dry": this.dryGain.gain.value,
+            "wet": this.wetGain.gain.value,
+        }
+    }
+
+    paramsFromJson(j) {
+        this.node.delayTime.value = j["time"];
+        this.feedback.gain.value = j["feedback"];
+        this.dryGain.gain.value = j["dry"];
+        this.wetGain.gain.value = j["wet"];
+        this.applyInputs();
+    }
 }
 
 registerEffect("delay", () => new Delay());
