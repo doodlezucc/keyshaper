@@ -1,5 +1,7 @@
 const playEntireSamples = true;
 
+const loadedResources = {};
+
 class DrumPad extends AudioSource {
     constructor() {
         super("drumpad");
@@ -13,10 +15,17 @@ class DrumPad extends AudioSource {
         this.loadAudio(3, "resources/drums/eternityhihato4.wav");
     }
 
-    loadAudio(slot, url) {
+    loadAudio(slot, url, refresh) {
+        if (!refresh && loadedResources[url]) {
+            this.buffers[slot] = loadedResources[url];
+            return;
+        }
+
         const request = new XMLHttpRequest();
-        request.onload = async (ev) => {
-            this.buffers[slot] = await ctx.decodeAudioData(request.response);
+        request.onload = async () => {
+            const buffer = await ctx.decodeAudioData(request.response);
+            this.buffers[slot] = buffer;
+            loadedResources[url] = buffer;
             console.log("Loaded sample in slot " + slot);
         }
         request.responseType = "arraybuffer";
