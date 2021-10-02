@@ -76,3 +76,8 @@ select:hover {
 .pattern-note {
     fill: #111;
 }
+
+.recording path {
+    fill: none;
+    stroke: #111;
+}

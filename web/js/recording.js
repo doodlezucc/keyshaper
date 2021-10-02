@@ -28,6 +28,10 @@ class Recorder {
         if (!this.isRecording) {
             this.isRecording = true;
 
+            if (project.isPaused) {
+                project.play();
+            }
+
             const stream = await window.navigator.mediaDevices.getUserMedia({
                 audio: {
                     deviceId: this.inputs[deviceIndex].deviceId,
@@ -59,7 +63,7 @@ class Recorder {
 
 class Recording extends TimelineItem {
     constructor(blob) {
-        super(1);
+        super("recording", 1);
 
         /** @type {Blob} */
         this.blob = blob;
@@ -71,9 +75,12 @@ class Recording extends TimelineItem {
         this.sampleLength = 1;
 
         this.gain = new GainNode(ctx, {
-            gain: 0.7
+            gain: 0.8
         });
         this.gain.connect(project.effectRack.chainStart);
+
+        this.peaks = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        this.elem.append(this.peaks);
 
         this._init();
     }
@@ -88,6 +95,22 @@ class Recording extends TimelineItem {
             console.log("Read recording in " + (Date.now() - time) + "ms.");
         }
         reader.readAsArrayBuffer(this.blob);
+    }
+
+    redrawElem() {
+        super.redrawElem();
+
+        const arr = this.audioBuffer.getChannelData(0);
+        let svgData = "M 0 " + (0.5 * patternHeight);
+
+        const steps = 10000;
+        for (let i = 0; i < steps; i++) {
+            const x = patternWidth * this.length * i / steps;
+            const y = (0.5 + 0.5 * arr[Math.floor(arr.length * i / steps)]) * patternHeight;
+            svgData += " L " + x + " " + y;
+        }
+
+        this.peaks.setAttribute("d", svgData);
     }
 
     get end() {
@@ -151,10 +174,12 @@ class Recording extends TimelineItem {
     }
 
     cancel(time) {
-        setTimeout(() => {
-            this.node.disconnect();
-        }, 1000 * (1 + time - ctx.currentTime));
-        this.node.stop(time);
+        if (this.node) {
+            setTimeout(() => {
+                this.node.disconnect();
+            }, 1000 * time - ctx.currentTime);
+            this.node.stop(time);
+        }
         this.isPlaying = false;
     }
 }

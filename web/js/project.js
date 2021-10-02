@@ -289,8 +289,9 @@ class Project {
 }
 
 class TimelineItem {
-    constructor(length = 1) {
+    constructor(className, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        this.elem.classList.add(className);
         this.elem.onclick = (ev) => {
             project.selectPattern(project.patterns.indexOf(this));
         };
@@ -327,7 +328,7 @@ class TimelineItem {
 
 class Pattern extends TimelineItem {
     constructor(audioSourceIndex, length = 1) {
-        super(length);
+        super("pattern", length);
 
         /** @type {Note[]} */
         this.notes = [];
@@ -336,7 +337,6 @@ class Pattern extends TimelineItem {
         this.audioSourceIndex = audioSourceIndex;
 
         this.redrawElem();
-        document.getElementById("timeline").prepend(this.elem);
     }
 
     /** @type {AudioSource} */
