@@ -14,6 +14,9 @@ class Project {
         this.effectRack = new EffectRack();
         this.effectRack.chainEnd.connect(ctx.destination);
 
+        /** @type {Recording[]} */
+        this.recordings = [];
+
         /** @type {Pattern[]} */
         this.patterns = [];
         this.currentPattern = 0;
@@ -21,6 +24,8 @@ class Project {
         this.lastFrame = -1;
         this.isRendering = false;
         this.isRecording = true;
+
+        this.recorder = new Recorder();
 
         this.isPaused = true;
         setInterval(() => {
@@ -99,8 +104,15 @@ class Project {
         for (const pattern of this.patterns) {
             pattern.audioSource.onBlur(ctx.currentTime);
         }
+        for (const rec of this.recordings) {
+            rec.cancel(ctx.currentTime);
+        }
         timelineCursor.setAttribute("x1", 0);
         timelineCursor.setAttribute("x2", 0);
+    }
+
+    get timelineItems() {
+        return this.patterns.concat(this.recordings);
     }
 
     bake() {
@@ -113,8 +125,8 @@ class Project {
             const start = this.lastFrame * frameLength / 1000;
             const end = start + frameLength / 1000;
 
-            for (const pattern of this.patterns) {
-                pattern.bake(start, end, this);
+            for (const item of this.timelineItems) {
+                item.bake(start, end, this);
             }
         }
     }
@@ -276,8 +288,8 @@ class Project {
     }
 }
 
-class Pattern {
-    constructor(audioSourceIndex, length = 1) {
+class TimelineItem {
+    constructor(length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
         this.elem.onclick = (ev) => {
             project.selectPattern(project.patterns.indexOf(this));
@@ -291,13 +303,37 @@ class Pattern {
         this.background.classList.add("pattern-background");
         this.elem.append(this.background);
 
+        this.length = length;
+        this.scaling = 1;
+
+        document.getElementById("timeline").prepend(this.elem);
+    }
+
+    redrawElem() {
+        if (this.length > project.longestPattern) {
+            project.longestPattern = this.length;
+        }
+        this.background.setAttribute("width", patternWidth * this.length);
+    }
+
+    dispose() {
+        this.elem.remove();
+    }
+
+    bake(start, end, project) {
+        console.warn('Unhandled baking');
+    }
+}
+
+class Pattern extends TimelineItem {
+    constructor(audioSourceIndex, length = 1) {
+        super(length);
+
         /** @type {Note[]} */
         this.notes = [];
         /** @type {Note[]} */
         this.registering = [];
         this.audioSourceIndex = audioSourceIndex;
-        this.length = length;
-        this.scaling = 1;
 
         this.redrawElem();
         document.getElementById("timeline").prepend(this.elem);
@@ -334,15 +370,8 @@ class Pattern {
         this.redrawElem();
     }
 
-    dispose() {
-        this.elem.remove();
-    }
-
     redrawElem() {
-        if (this.length > project.longestPattern) {
-            project.longestPattern = this.length;
-        }
-        this.background.setAttribute("width", patternWidth * this.length);
+        super.redrawElem();
 
         while (this.elem.childElementCount > 1) {
             this.elem.removeChild(this.elem.lastChild);

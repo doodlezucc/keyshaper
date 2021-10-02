@@ -11,7 +11,7 @@ let recordOnInput = false;
 /** @type {AudioSource} */
 let src;
 
-document.onkeydown = (ev) => {
+document.onkeydown = async (ev) => {
     time1 = Date.now();
     //console.log(time1);
     onUserGesture();
@@ -61,6 +61,16 @@ document.onkeydown = (ev) => {
             case "p":
                 project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
                 return project.selectPattern(project.patterns.length - 1);
+            case "R":
+                if (!project.recorder.isRecording) {
+                    const index = 0;
+                    console.log("Recording device " + project.recorder.inputs[index].label);
+                    const rec = await project.recorder.startRecording(index);
+                    project.recordings.push(rec);
+                    console.log("Recorded some stuff");
+                } else {
+                    project.recorder.stopRecording();
+                }
             case "i":
                 recordOnInput = !recordOnInput;
                 return console.log("Record on input: " + recordOnInput);
@@ -151,7 +161,7 @@ function titleCase(s) {
 
 window.onload = () => {
     initSelects();
-    document.getElementById("render").onclick = async function () {
+    document.getElementById("render").onclick = async function() {
         this.disabled = true;
         await project.render();
         this.disabled = false;
