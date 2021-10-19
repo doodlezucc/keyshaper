@@ -111,6 +111,7 @@ class Project {
         timelineCursor.setAttribute("x2", 0);
     }
 
+    /** @type {TimelineItem[]} */
     get timelineItems() {
         return this.patterns.concat(this.clips);
     }
@@ -196,8 +197,8 @@ class Project {
         const step = frameLength / 1000;
         for (let t = 0; t < length; t += step) {
             const end = t + step;
-            for (const pattern of this.patterns) {
-                pattern.bake(t, end, this);
+            for (const item of this.timelineItems) {
+                item.bake(t, end, this);
             }
         }
 
@@ -404,10 +405,10 @@ class Pattern extends TimelineItem {
     }
 
     bake(start, end, project) {
-        const loopTime = this.length * project.unitLength;
-        const loopStart = project.ctxStart + Math.floor(start / loopTime) * loopTime;
-        const wStart = start % loopTime;
-        const wEnd = end % loopTime;
+        const loopLength = this.length * project.unitLength;
+        const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
+        const wStart = start % loopLength;
+        const wEnd = end % loopLength;
         const wrap = wStart > wEnd;
 
         for (const note of this.notes) {
@@ -421,13 +422,13 @@ class Pattern extends TimelineItem {
                     this._noteEvent(note, true, ctxNStart);
                 }
                 else if (nStart < wEnd) {
-                    this._noteEvent(note, true, ctxNStart + loopTime);
+                    this._noteEvent(note, true, ctxNStart + loopLength);
                 }
                 if (nEnd >= wStart) {
                     this._noteEvent(note, false, ctxNEnd);
                 }
                 else if (nEnd < wEnd) {
-                    this._noteEvent(note, false, ctxNEnd + loopTime);
+                    this._noteEvent(note, false, ctxNEnd + loopLength);
                 }
             } else {
                 if (nStart >= wStart && nStart < wEnd) {

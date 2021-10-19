@@ -123,10 +123,10 @@ class Clip extends TimelineItem {
      * @param {Project} project 
      */
     bake(start, end, project) {
-        const loopTime = project.longestPattern * project.unitLength;
-        const loopStart = project.ctxStart + Math.floor(start / loopTime) * loopTime;
-        const wStart = start % loopTime;
-        const wEnd = end % loopTime;
+        const loopLength = project.longestPattern * project.unitLength;
+        const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
+        const wStart = start % loopLength;
+        const wEnd = end % loopLength;
         const wrap = wStart > wEnd;
 
         const nStart = this.start * this.scaling * project.unitLength;
@@ -139,13 +139,13 @@ class Clip extends TimelineItem {
                 this._noteEvent(true, ctxNStart);
             }
             else if (nStart < wEnd) {
-                this._noteEvent(true, ctxNStart + loopTime);
+                this._noteEvent(true, ctxNStart + loopLength);
             }
             if (nEnd >= wStart) {
                 this._noteEvent(false, ctxNEnd);
             }
             else if (nEnd < wEnd) {
-                this._noteEvent(false, ctxNEnd + loopTime);
+                this._noteEvent(false, ctxNEnd + loopLength);
             }
         } else {
             if (nStart >= wStart && nStart < wEnd) {
@@ -159,14 +159,12 @@ class Clip extends TimelineItem {
 
     _noteEvent(on, when) {
         if (on) {
-            console.log("play");
             this.node = new AudioBufferSourceNode(ctx, {
                 buffer: this.audioBuffer
             });
             this.node.connect(this.gain);
             this.node.start(when, this.sampleOffset);
         } else {
-            console.log("stop " + when);
             if (this.node) {
                 this.cancel(when);
             }
@@ -177,7 +175,7 @@ class Clip extends TimelineItem {
         if (this.node) {
             setTimeout(() => {
                 this.node.disconnect();
-            }, 1000 * time - ctx.currentTime);
+            }, 1000 * (time - ctx.currentTime));
             this.node.stop(time);
         }
         this.isPlaying = false;
