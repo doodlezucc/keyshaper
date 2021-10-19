@@ -55,11 +55,12 @@ class Oscillator extends AudioSource {
 
             if (oscTime < this.attack) {
                 val = oscTime / this.attack;
+                console.log(oscTime, this.attack);
             } else if (oscTime < this.attack + this.decay) {
-                val = 1 - (oscTime / (this.attack + this.decay)) * (1 - this.sustain);
+                val = 1 - ((oscTime - this.attack) / this.decay) * (1 - this.sustain);
             }
 
-            noteGain.gain.cancelScheduledValues(when - 0.001);
+            noteGain.gain.cancelAndHoldAtTime(when);
             noteGain.gain.setValueAtTime(val * velocity, when);
             noteGain.gain.linearRampToValueAtTime(0, when + this.release);
             osc.stop(when + this.release);
