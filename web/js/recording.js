@@ -58,6 +58,9 @@ class Recorder {
     stopRecording() {
         this.isRecording = false;
         this.mediaRecorder.stop();
+        if (!project.isPaused) {
+            project.pause();
+        }
     }
 }
 
@@ -72,12 +75,8 @@ class Clip extends TimelineItem {
 
         this.start = 0;
         this.sampleOffset = 0;
-        this.sampleLength = 1;
 
-        this.gain = new GainNode(ctx, {
-            gain: 0.8
-        });
-        this.gain.connect(project.effectRack.chainStart);
+        this.updateAudioContext();
 
         this.peaks = document.createElementNS("http://www.w3.org/2000/svg", "path");
         this.elem.append(this.peaks);
@@ -90,8 +89,13 @@ class Clip extends TimelineItem {
         const reader = new FileReader();
         reader.onloadend = async () => {
             this.audioBuffer = await ctx.decodeAudioData(reader.result);
-            this.length = this.audioBuffer.duration / project.unitLength;
-            this.redrawElem();
+            if (project.unitLength == 1000) {
+                this.length = 1;
+                project.calculateFirstUnitLength();
+            } else {
+                this.length = this.audioBuffer.duration / project.unitLength;
+                this.redrawElem();
+            }
             console.log("Read recording in " + (Date.now() - time) + "ms.");
         }
         reader.readAsArrayBuffer(this.blob);
@@ -123,7 +127,7 @@ class Clip extends TimelineItem {
      * @param {Project} project 
      */
     bake(start, end, project) {
-        const loopLength = project.longestPattern * project.unitLength;
+        const loopLength = project.longestItem * project.unitLength;
         const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
         const wStart = start % loopLength;
         const wEnd = end % loopLength;
@@ -135,24 +139,24 @@ class Clip extends TimelineItem {
         const ctxNEnd = loopStart + nEnd;
 
         if (wrap) {
-            if (nStart >= wStart) {
-                this._noteEvent(true, ctxNStart);
-            }
-            else if (nStart < wEnd) {
-                this._noteEvent(true, ctxNStart + loopLength);
-            }
             if (nEnd >= wStart) {
                 this._noteEvent(false, ctxNEnd);
             }
             else if (nEnd < wEnd) {
                 this._noteEvent(false, ctxNEnd + loopLength);
             }
-        } else {
-            if (nStart >= wStart && nStart < wEnd) {
+            if (nStart >= wStart) {
                 this._noteEvent(true, ctxNStart);
             }
+            else if (nStart < wEnd) {
+                this._noteEvent(true, ctxNStart + loopLength);
+            }
+        } else {
             if (nEnd >= wStart && nEnd < wEnd) {
                 this._noteEvent(false, ctxNEnd);
+            }
+            if (nStart >= wStart && nStart < wEnd) {
+                this._noteEvent(true, ctxNStart);
             }
         }
     }
@@ -173,11 +177,22 @@ class Clip extends TimelineItem {
 
     cancel(time) {
         if (this.node) {
+            const reference = this.node;
             setTimeout(() => {
-                this.node.disconnect();
+                reference.disconnect();
             }, 1000 * (time - ctx.currentTime));
-            this.node.stop(time);
+            reference.stop(time);
         }
         this.isPlaying = false;
+    }
+
+    updateAudioContext() {
+        if (this.gain) {
+            this.gain.disconnect();
+        }
+        this.gain = new GainNode(ctx, {
+            gain: 0.8
+        });
+        this.gain.connect(project.effectRack.chainStart);
     }
 }

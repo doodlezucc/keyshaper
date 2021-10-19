@@ -19,7 +19,7 @@ class Project {
 
         /** @type {Pattern[]} */
         this.patterns = [];
-        this.currentPattern = 0;
+        this.currentItem = 0;
         this.ctxStart = 0;
         this.lastFrame = -1;
         this.isRendering = false;
@@ -34,45 +34,49 @@ class Project {
             }
         }, frameLength - 5);
 
-        this.longestPattern = 1;
+        this.longestItem = 1;
         this.redrawTimelineGuides();
-        this.zeroPatternsEvent();
+        this.zeroItemsEvent();
 
         // 60 FPS redraws
         setInterval(() => {
             if (!this.isPaused) {
                 const diff = ctx.currentTime - this.ctxStart;
-                const x = patternWidth * ((diff / this.unitLength) % this.longestPattern);
+                const x = patternWidth * ((diff / this.unitLength) % this.longestItem);
                 timelineCursor.setAttribute("x1", x);
                 timelineCursor.setAttribute("x2", x);
             }
         }, 1000 / 60);
     }
 
-    selectPattern(index) {
-        project.currentPattern = index;
-        src = project.patterns[project.currentPattern].audioSource;
-        console.log("Selected pattern " + project.currentPattern);
+    selectItem(index) {
+        project.currentItem = Math.max(index, 0);
+        src = project.timelineItems[project.currentItem].audioSource;
+        console.log("Selected timeline item " + project.currentItem);
     }
 
-    removeCurrentPattern() {
-        if (this.patterns.length) {
-            this.patterns[this.currentPattern].dispose();
-            this.patterns = this.patterns.filter((pattern, index) => {
-                return index != this.currentPattern;
-            });
+    removeCurrentItem() {
+        if (this.timelineItems.length) {
+            const item = this.timelineItems[this.currentItem];
+            item.dispose();
 
-            if (this.patterns.length) {
-                this.selectPattern(this.currentPattern - 1);
+            if (item instanceof Pattern) {
+                this.patterns = this.patterns.filter(p => p != item);
             } else {
-                this.zeroPatternsEvent();
+                this.clips = this.clips.filter(c => c != item);
+            }
+
+            if (this.timelineItems.length) {
+                this.selectItem(this.currentItem - 1);
+            } else {
+                this.zeroItemsEvent();
             }
         }
     }
 
-    zeroPatternsEvent() {
+    zeroItemsEvent() {
         this.unitLength = 1000;
-        this.longestPattern = 1;
+        this.longestItem = 1;
         this.redrawTimelineGuides();
     }
 
@@ -153,7 +157,7 @@ class Project {
         const oscPattern = new Pattern(1, 2);
         oscPattern.redrawElem();
         this.patterns.push(oscPattern);
-        this.selectPattern(1);
+        this.selectItem(1);
 
         this.effectRack.insert(new Reverb(), 0);
     }
@@ -163,7 +167,7 @@ class Project {
         this.isRendering = true;
         console.log("Rendering...");
 
-        const length = this.unitLength * this.longestPattern;
+        const length = this.unitLength * this.longestItem;
         const originalCtx = ctx;
         ctx = new OfflineAudioContext({
             length: length * sampleRate,
@@ -193,6 +197,8 @@ class Project {
             newSource.paramsFromJson(src.paramsToJson());
             this.audioSources.push(newSource);
         }
+
+        this.clips.forEach(c => c.updateAudioContext());
 
         const step = frameLength / 1000;
         for (let t = 0; t < length; t += step) {
@@ -235,8 +241,28 @@ class Project {
         this.ctxStart = originalCtxStart;
         this.effectRack = originalEffectRack;
         this.audioSources = originalSources;
+        this.clips.forEach(c => c.updateAudioContext());
         this.isRendering = false;
         console.log("Done!");
+    }
+
+    calculateFirstUnitLength() {
+        if (this.clips.length) {
+            project.unitLength = this.clips[0].audioBuffer.duration;
+        } else {
+            project.unitLength = ctx.currentTime - project.ctxStart;
+        }
+
+        let bpm = 4 * 60 / project.unitLength;
+        while (bpm < 70) {
+            project.unitLength /= 2;
+            bpm *= 2;
+            project.timelineItems[0].length *= 2;
+        }
+        project.redrawTimelineGuides();
+        project.timelineItems[0].redrawElem();
+
+        console.log("Set unit length to " + project.unitLength.toFixed(3) + " seconds, " + bpm.toFixed(1) + " BPM");
     }
 
     dispose() {
@@ -247,8 +273,8 @@ class Project {
             effect.dispose();
         }
         this.effectRack.chainEnd.disconnect(0);
-        for (const pattern of this.patterns) {
-            pattern.dispose();
+        for (const item of this.timelineItems) {
+            item.dispose();
         }
         this.isPaused = true;
     }
@@ -294,10 +320,10 @@ class TimelineItem {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
         this.elem.classList.add(className);
         this.elem.onclick = (ev) => {
-            project.selectPattern(project.patterns.indexOf(this));
+            project.selectItem(project.timelineItems.indexOf(this));
         };
 
-        const off = patternHeight * project.patterns.length;
+        const off = patternHeight * project.timelineItems.length;
         this.elem.setAttribute("transform", "translate(0, " + off + ")");
 
         this.background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -312,8 +338,8 @@ class TimelineItem {
     }
 
     redrawElem() {
-        if (this.length > project.longestPattern) {
-            project.longestPattern = this.length;
+        if (this.length > project.longestItem) {
+            project.longestItem = this.length;
         }
         this.background.setAttribute("width", patternWidth * this.length);
     }

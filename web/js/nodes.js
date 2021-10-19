@@ -154,7 +154,7 @@ class AudioSource extends SerializableParams {
             if (!project.patterns.length) {
                 project.patterns.push(new Pattern(0, 1));
             }
-            project.patterns[project.currentPattern].registerNote(note, velocity, when);
+            project.patterns[project.currentItem].registerNote(note, velocity, when);
         }
     }
 
@@ -165,7 +165,7 @@ class AudioSource extends SerializableParams {
         }
 
         if (doRecord && !project.isPaused) {
-            project.patterns[project.currentPattern].finishRegisteringNote(note, when);
+            project.patterns[project.currentItem].finishRegisteringNote(note, when);
         }
     }
 

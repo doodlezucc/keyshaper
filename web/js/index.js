@@ -19,18 +19,8 @@ document.onkeydown = async (ev) => {
     if (ev.target instanceof HTMLInputElement) return;
 
     if (ev.key == " ") {
-        if (project.unitLength == 1000 && !project.isPaused && project.patterns.length == 1) {
-            project.unitLength = ctx.currentTime - project.ctxStart;
-            let bpm = 4 * 60 / project.unitLength;
-            while (bpm < 70) {
-                project.unitLength /= 2;
-                bpm *= 2;
-                project.patterns[0].length *= 2;
-            }
-            project.redrawTimelineGuides();
-            project.patterns[0].redrawElem();
-
-            console.log("Set unit length to " + project.unitLength.toFixed(3) + " seconds, " + bpm.toFixed(1) + " BPM");
+        if (project.unitLength == 1000 && !project.isPaused && project.timelineItems.length == 1) {
+            project.calculateFirstUnitLength();
         } else {
             if (project.isPaused) {
                 project.play();
@@ -50,7 +40,7 @@ document.onkeydown = async (ev) => {
     } else {
         switch (ev.key) {
             case "Backspace":
-                project.removeCurrentPattern();
+                project.removeCurrentItem();
                 return ev.preventDefault();
             case "o":
                 return project.audioSources.push(new Oscillator());
@@ -60,17 +50,17 @@ document.onkeydown = async (ev) => {
                 return project.effectRack.append(new Reverb());
             case "p":
                 project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
-                return project.selectPattern(project.patterns.length - 1);
+                return project.selectItem(project.patterns.length - 1);
             case "R":
                 if (!project.recorder.isRecording) {
                     const index = 0;
                     console.log("Recording device " + project.recorder.inputs[index].label);
                     const rec = await project.recorder.startRecording(index);
                     project.clips.push(rec);
-                    console.log("Recorded some stuff");
                 } else {
                     project.recorder.stopRecording();
                 }
+                return;
             case "i":
                 recordOnInput = !recordOnInput;
                 return console.log("Record on input: " + recordOnInput);
@@ -118,7 +108,7 @@ async function onUserGesture() {
     ctx.resume();
 
     project = new Project();
-    project.test();
+    // project.test();
 
     setTimeout(() => {
         // project.play();
