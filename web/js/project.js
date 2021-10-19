@@ -14,8 +14,8 @@ class Project {
         this.effectRack = new EffectRack();
         this.effectRack.chainEnd.connect(ctx.destination);
 
-        /** @type {Recording[]} */
-        this.recordings = [];
+        /** @type {Clip[]} */
+        this.clips = [];
 
         /** @type {Pattern[]} */
         this.patterns = [];
@@ -104,15 +104,15 @@ class Project {
         for (const pattern of this.patterns) {
             pattern.audioSource.onBlur(ctx.currentTime);
         }
-        for (const rec of this.recordings) {
-            rec.cancel(ctx.currentTime);
+        for (const c of this.clips) {
+            c.cancel(ctx.currentTime);
         }
         timelineCursor.setAttribute("x1", 0);
         timelineCursor.setAttribute("x2", 0);
     }
 
     get timelineItems() {
-        return this.patterns.concat(this.recordings);
+        return this.patterns.concat(this.clips);
     }
 
     bake() {

@@ -22,7 +22,7 @@ class Recorder {
 
     /**
      * @param {number} deviceIndex 
-     * @returns {Promise<Recording>}
+     * @returns {Promise<Clip>}
      */
     async startRecording(deviceIndex) {
         if (!this.isRecording) {
@@ -49,7 +49,7 @@ class Recorder {
                 this.mediaRecorder.start();
                 this.mediaRecorder.ondataavailable = (ev) => {
                     playbackNode.disconnect();
-                    resolve(new Recording(ev.data));
+                    resolve(new Clip(ev.data));
                 }
             });
         }
@@ -61,7 +61,7 @@ class Recorder {
     }
 }
 
-class Recording extends TimelineItem {
+class Clip extends TimelineItem {
     constructor(blob) {
         super("recording", 1);
 

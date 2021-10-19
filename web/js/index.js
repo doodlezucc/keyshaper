@@ -66,7 +66,7 @@ document.onkeydown = async (ev) => {
                     const index = 0;
                     console.log("Recording device " + project.recorder.inputs[index].label);
                     const rec = await project.recorder.startRecording(index);
-                    project.recordings.push(rec);
+                    project.clips.push(rec);
                     console.log("Recorded some stuff");
                 } else {
                     project.recorder.stopRecording();
