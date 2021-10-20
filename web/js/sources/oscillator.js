@@ -55,7 +55,6 @@ class Oscillator extends AudioSource {
 
             if (oscTime < this.attack) {
                 val = oscTime / this.attack;
-                console.log(oscTime, this.attack);
             } else if (oscTime < this.attack + this.decay) {
                 val = 1 - ((oscTime - this.attack) / this.decay) * (1 - this.sustain);
             }

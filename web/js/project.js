@@ -382,7 +382,6 @@ class Pattern extends TimelineItem {
     finishRegisteringNote(pitch, when) {
         let time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
 
-        this.registering.findIndex(note => note.pitch == pitch);
         this.registering = this.registering.filter(note => {
             if (note.pitch == pitch) {
                 if (note.start > time) {
@@ -451,7 +450,9 @@ class Pattern extends TimelineItem {
                     this._noteEvent(note, true, ctxNStart + loopLength);
                 }
                 if (nEnd >= wStart) {
-                    this._noteEvent(note, false, ctxNEnd);
+                    if (!this.registering.some(n => n == note)) {
+                        this._noteEvent(note, false, ctxNEnd);
+                    }
                 }
                 else if (nEnd < wEnd) {
                     this._noteEvent(note, false, ctxNEnd + loopLength);
