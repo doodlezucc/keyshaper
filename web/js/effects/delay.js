@@ -2,7 +2,7 @@ class Delay extends AudioEffect {
     constructor() {
         const inputGain = ctx.createGain();
         const merger = ctx.createGain();
-        super("delay", new NodeChain(inputGain, merger));
+        super("delay", "Delay", new NodeChain(inputGain, merger));
 
         this.node = ctx.createDelay(10);
         this.feedback = ctx.createGain();

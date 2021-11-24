@@ -51,8 +51,21 @@ select:hover {
     background-color: #161616;
     color: white;
     border-radius: 10px;
-    padding: 12px;
-    gap: 16px;
+    display: inline-flex;
+    flex-direction: column;
+    max-height: max-content;
+    overflow: hidden;
+}
+.window > span {
+    background-color: #5866b8;
+}
+.window > span > p {
+    margin: 0 6px;
+}
+
+content {
+    margin: 4px;
+    padding: 4px;
     display: inline-flex;
     flex-direction: column;
     height: max-content;

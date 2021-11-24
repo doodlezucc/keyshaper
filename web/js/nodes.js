@@ -15,15 +15,24 @@ function registerEffect(id, call) {
 }
 
 class ControlsWindow {
-    constructor(templateId, parent) {
-        /** @type {HTMLTemplateElement} */
-        const template = document.getElementById(templateId);
+    constructor(templateId, name, parent) {
         this.elem = document.createElement("div");
         this.elem.className = 'window ' + templateId;
 
+        const span = document.createElement("span");
+        const title = document.createElement("p");
+        title.innerText = name;
+        span.appendChild(title);
+
+        this.content = document.createElement("content");
+
+        /** @type {HTMLTemplateElement} */
+        const template = document.getElementById(templateId);
         for (const child of template.content.children) {
-            this.elem.append(child.cloneNode(true));
+            this.content.append(child.cloneNode(true));
         }
+
+        this.elem.append(span, this.content);
 
         if (!project.isRendering) {
             parent.append(this.elem);
@@ -32,13 +41,13 @@ class ControlsWindow {
 }
 
 class AudioSourceControls extends ControlsWindow {
-    constructor(templateId) {
-        super(templateId, sourcesContainer);
+    constructor(templateId, name) {
+        super(templateId, name, sourcesContainer);
     }
 }
 class EffectControls extends ControlsWindow {
-    constructor(templateId) {
-        super(templateId, effectsContainer);
+    constructor(templateId, name) {
+        super(templateId, name, effectsContainer);
     }
 }
 
@@ -94,13 +103,13 @@ class SerializableParams {
 class AudioSource extends SerializableParams {
     #bus;
 
-    constructor(templateId) {
+    constructor(templateId, name) {
         super(templateId);
-        this.controls = new AudioSourceControls(templateId);
+        this.controls = new AudioSourceControls(templateId, name);
 
         this.gain = ctx.createGain();
         this.gain.gain.value = 0.2;
-        this.bus = 1;
+        this.bus = project.mixer.selectedIndex;
 
         /** @type {PlayingNote[]} */
         this.notes = [];
@@ -213,12 +222,12 @@ class NodeChain {
 
 class AudioEffect extends SerializableParams {
     /** @param {NodeChain} effectChain */
-    constructor(type, effectChain) {
+    constructor(type, name, effectChain) {
         super(type);
         this.effectChain = effectChain;
         this.chainStart = effectChain.chainStart;
         this.chainEnd = effectChain.chainEnd;
-        this.controls = new EffectControls(type);
+        this.controls = new EffectControls(type, name);
     }
 
     dispose() {

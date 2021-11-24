@@ -1,6 +1,6 @@
 class Oscillator extends AudioSource {
     constructor() {
-        super("oscillator");
+        super("oscillator", "Oscillator");
         this.oscType = "sine";
         this.attack = 0;
         //this.hold = 0;

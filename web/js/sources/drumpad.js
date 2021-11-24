@@ -3,7 +3,7 @@ const preloadBuffers = true;
 
 class DrumPad extends AudioSource {
     constructor() {
-        super("drumpad");
+        super("drumpad", "Drum Pad");
 
         /** @type {DrumPadSlot[]} */
         this.slots = [];
@@ -63,6 +63,7 @@ class DrumPad extends AudioSource {
             this.slots = j["slots"].map(j => DrumPadSlot.fromJson(this, j));
         } catch (error) {
             console.error(error);
+            this.resetToDefaults();
         }
     }
 }
@@ -99,7 +100,7 @@ class DrumPadSlot {
         }
         this.elem.append(btn);
         this.elem.append(edit);
-        drumPad.controls.elem.appendChild(this.elem);
+        drumPad.controls.content.appendChild(this.elem);
     }
 
     static fromJson(drumPad, json) {

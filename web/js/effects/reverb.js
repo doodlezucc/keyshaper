@@ -2,7 +2,7 @@ class Reverb extends AudioEffect {
     constructor() {
         const inputGain = ctx.createGain();
         const merger = ctx.createGain();
-        super("reverb", new NodeChain(inputGain, merger));
+        super("reverb", "Reverb", new NodeChain(inputGain, merger));
 
         this.node = ctx.createConvolver();
         this.dryGain = ctx.createGain();
