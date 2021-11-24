@@ -5,6 +5,7 @@ localforage.config({
 
 /** @type {Resource[]} */
 const resources = [];
+const urlAudioBuffers = {};
 
 class Resource {
     constructor(id, name, value) {
@@ -12,6 +13,10 @@ class Resource {
         this.value = value;
         this.name = name;
         this.isLoaded = value !== undefined;
+    }
+
+    static lookup(id) {
+        return resources.find(res => res.id === id);
     }
 
     async storedValue() {
@@ -29,4 +34,35 @@ class Resource {
         console.log("Loaded resource " + this.name);
         return this.value;
     }
+}
+
+/**
+ * @param {string} url
+ * @param {boolean} refresh
+ * @returns {Promise<AudioBuffer>}
+ */
+function loadAudioFromUrl(url, refresh = false) {
+    return new Promise((resolve, reject) => {
+        if (!refresh && urlAudioBuffers[url]) {
+            resolve(urlAudioBuffers[url]);
+        }
+
+        const request = new XMLHttpRequest();
+        request.onerror = (e) => reject(e);
+        request.onload = async () => {
+            const buffer = await ctx.decodeAudioData(request.response);
+            urlAudioBuffers[url] = buffer;
+            resolve(buffer);
+        }
+        request.responseType = "arraybuffer";
+        request.open("GET", url);
+        request.send();
+    });
+}
+
+/**
+ * @param {Blob} blob
+ */
+async function blobToAudioBuffer(blob) {
+    return await ctx.decodeAudioData(await blob.arrayBuffer());
 }

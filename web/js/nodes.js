@@ -5,7 +5,7 @@ const sourcesContainer = document.querySelector("#sources");
 const effectsContainer = document.querySelector("#effects");
 
 let sourceLookup = {};
-let effectLookup = {}
+let effectLookup = {};
 
 function registerSource(id, call) {
     sourceLookup[id] = call;
@@ -85,11 +85,13 @@ class SerializableParams {
         return obj;
     }
 
-    paramsToJson() {
-        return {};
-    }
-
+    paramsToJson() { return {}; }
     paramsFromJson(j) { }
+
+    /** @param {AudioBuffer} buffer */
+    async storeAudioBuffer(name, buffer) {
+        localforage.setItem(name, buffer);
+    }
 }
 
 class AudioSource extends SerializableParams {

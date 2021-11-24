@@ -1,45 +1,30 @@
 const playEntireSamples = true;
-
-const loadedResources = {};
+const preloadBuffers = true;
 
 class DrumPad extends AudioSource {
     constructor() {
         super("drumpad");
-        this.triggers = [36, 38, 42, 46];
 
-        /** @type {AudioBuffer[]} */
-        this.buffers = [];
-        this.loadAudio(0, "resources/drums/eternitykick5.wav");
-        this.loadAudio(1, "resources/drums/eternitysnare9.wav");
-        this.loadAudio(2, "resources/drums/eternityhihatc6.wav");
-        this.loadAudio(3, "resources/drums/eternityhihato4.wav");
+        /** @type {DrumPadSlot[]} */
+        this.slots = [];
+        this.resetToDefaults();
     }
 
-    loadAudio(slot, url, refresh) {
-        if (!refresh && loadedResources[url]) {
-            this.buffers[slot] = loadedResources[url];
-            return;
-        }
-
-        const request = new XMLHttpRequest();
-        request.onload = async () => {
-            const buffer = await ctx.decodeAudioData(request.response);
-            this.buffers[slot] = buffer;
-            loadedResources[url] = buffer;
-            console.log("Loaded sample in slot " + slot);
-        }
-        request.responseType = "arraybuffer";
-        request.open("GET", url);
-        request.send();
+    resetToDefaults() {
+        this.slots.push(
+            new DrumPadSlot("Kick", 36, "resources/drums/eternitykick5.wav"),
+            new DrumPadSlot("Snare", 38, "resources/drums/eternitysnare9.wav"),
+            new DrumPadSlot("Closed Hi-Hat", 42, "resources/drums/eternityhihatc6.wav"),
+            new DrumPadSlot("Open Hi-Hat", 46, "resources/drums/eternityhihato4.wav"),
+        )
     }
 
     createNotePlayer(note, velocity, start) {
-        for (let i = 0; i < this.triggers.length; i++) {
-            const trigger = this.triggers[i];
+        for (const slot of this.slots) {
 
-            if (note == trigger) {
+            if (note == slot.trigger) {
                 const sourceNode = ctx.createBufferSource();
-                const buffer = this.buffers[i];
+                const buffer = slot.buffer;
                 sourceNode.buffer = buffer;
 
                 const gainNode = ctx.createGain();
@@ -60,6 +45,80 @@ class DrumPad extends AudioSource {
                     }));
             }
         }
+    }
+
+    paramsToJson() {
+        return {
+            "slots": this.slots.map(slot => slot.toJson()),
+        };
+    }
+
+    paramsFromJson(j) {
+        this.slots.length = 0;
+        this.slots.push(j["slots"].map(j => DrumPadSlot.fromJson(j)));
+    }
+}
+
+class DrumPadSlot {
+    #audio;
+
+    /**
+     * @param {string} name
+     * @param {number} trigger
+     * @param {Resource|string} audio
+     */
+    constructor(name, trigger, audio) {
+        this.name = name;
+        this.trigger = trigger;
+        this.audio = audio;
+    }
+
+    static fromJson(json) {
+        const audio = json["audio"];
+        return new DrumPadSlot(
+            json["name"],
+            json["trigger"],
+            json["isUrlAudio"] ? audio : Resource.lookup(audio),
+        );
+    }
+
+    toJson() {
+        const audioId = (this.audio instanceof Resource) ? this.audio.id : this.audio;
+
+        return {
+            "name": this.name,
+            "trigger": this.trigger,
+            "audio": audioId,
+            "isUrlAudio": this.isUrlAudio,
+        };
+    }
+
+    get audio() { return this.#audio; }
+    set audio(audio) {
+        this.#audio = audio;
+        this.buffer = undefined;
+        if (preloadBuffers) this.loadAudioBuffer();
+    }
+
+    get isUrlAudio() {
+        return !(audio instanceof Resource);
+    }
+
+    async loadAudioBuffer() {
+        console.log("load");
+        if (!this.buffer) {
+            console.log(this.audio)
+            if (this.audio instanceof Resource) {
+                const blob = await this.audio.storedValue();
+                this.buffer = blobToAudioBuffer(blob);
+            } else {
+                console.log("ha lol");
+                this.buffer = await loadAudioFromUrl(this.audio);
+            }
+
+            if (this.buffer) console.log("Loaded buffer for " + this.name);
+        }
+        return this.buffer;
     }
 }
 
