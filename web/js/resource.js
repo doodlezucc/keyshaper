@@ -1,11 +1,15 @@
+/** @type {Resource[]} */
+const resources = [];
+const urlAudioBuffers = {};
+
 localforage.config({
     storeName: "keyshaper",
     version: 1,
 });
-
-/** @type {Resource[]} */
-const resources = [];
-const urlAudioBuffers = {};
+localforage.iterate((v, k) => {
+    console.log([k, v]);
+    resources.push(new Resource(k, v.name, v.value));
+});
 
 class Resource {
     constructor(id, name, value) {
@@ -19,14 +23,17 @@ class Resource {
         return resources.find(res => res.id === id);
     }
 
-    async storedValue() {
+    async safeValue() {
         if (this.value !== undefined) return this.value;
         return this.load();
     }
 
     async save() {
-        await localforage.setItem(this.id, this.value);
-        console.log("Stored blob");
+        await localforage.setItem(this.id, {
+            name: this.name,
+            value: this.value,
+        });
+        console.log("Stored resource " + this.name);
     }
 
     async load() {
@@ -65,4 +72,34 @@ function loadAudioFromUrl(url, refresh = false) {
  */
 async function blobToAudioBuffer(blob) {
     return await ctx.decodeAudioData(await blob.arrayBuffer());
+}
+
+async function openResourceDialog(mimeType, name) {
+    const file = await openFileDialog(mimeType);
+    if (file) {
+        name = name ?? (file.name + file.size);
+        const resource = new Resource(name, file.name, new Blob([file]));
+        await resource.save();
+        return resource;
+    }
+}
+
+/**
+ * @param {string} mimeType
+ * @returns {Promise<File>}
+ */
+function openFileDialog(mimeType) {
+    return new Promise((resolve, reject) => {
+        /** @type {HTMLInputElement} */
+        const uploadInput = document.getElementById("fileUpload");
+
+        uploadInput.oninput = () => {
+            if (uploadInput.files.length > 0) {
+                resolve(uploadInput.files.item(0));
+            }
+
+        }
+
+        uploadInput.click();
+    });
 }

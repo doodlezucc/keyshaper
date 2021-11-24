@@ -81,3 +81,7 @@ select:hover {
     fill: none;
     stroke: #111;
 }
+
+#fileUpload {
+    display: none;
+}
