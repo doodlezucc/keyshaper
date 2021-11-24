@@ -92,17 +92,26 @@ class SerializableParams {
 }
 
 class AudioSource extends SerializableParams {
+    #bus;
+
     constructor(templateId) {
         super(templateId);
         this.controls = new AudioSourceControls(templateId);
 
         this.gain = ctx.createGain();
         this.gain.gain.value = 0.2;
-        this.gain.connect(project.effectRack.chainStart);
+        this.bus = 1;
 
         /** @type {PlayingNote[]} */
         this.notes = [];
         this.pitchBend = 0;
+    }
+
+    get bus() { return this.#bus; }
+    set bus(index) {
+        this.#bus = index;
+        this.gain.disconnect();
+        this.gain.connect(project.mixer.tracks[index].chainStart);
     }
 
     midi(ev) {

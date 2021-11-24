@@ -42,7 +42,7 @@ class Recorder {
             const playbackNode = new MediaStreamAudioSourceNode(ctx, {
                 mediaStream: stream
             });
-            playbackNode.connect(project.effectRack.chainStart);
+            playbackNode.connect(project.mixer.tracks[0].chainStart);
 
             return new Promise(resolve => {
                 this.mediaRecorder = new MediaRecorder(stream);
@@ -193,6 +193,6 @@ class Clip extends TimelineItem {
         this.gain = new GainNode(ctx, {
             gain: 0.8
         });
-        this.gain.connect(project.effectRack.chainStart);
+        this.gain.connect(project.mixer.tracks[0].chainStart);
     }
 }

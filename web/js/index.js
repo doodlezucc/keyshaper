@@ -47,7 +47,7 @@ document.onkeydown = async (ev) => {
             case "d":
                 return project.audioSources.push(new DrumPad());
             case "r":
-                return project.effectRack.append(new Reverb());
+                return project.mixer.selected.append(new Reverb());
             case "p":
                 project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
                 return project.selectItem(project.patterns.length - 1);
@@ -136,7 +136,7 @@ function initSelect(selectId, emptyOptionName, lookup, cb) {
 }
 
 function initSelects() {
-    initSelect("addEffect", "Add Effect...", effectLookup, e => project.effectRack.append(e));
+    initSelect("addEffect", "Add Effect...", effectLookup, e => project.mixer.selected.append(e));
     initSelect("addSource", "Add Audio Source...", sourceLookup, e => project.audioSources.push(e));
 }
 

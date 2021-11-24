@@ -11,8 +11,8 @@ class Project {
 
         /** @type {AudioSource[]} */
         this.audioSources = [];
-        this.effectRack = new EffectRack();
-        this.effectRack.chainEnd.connect(ctx.destination);
+        this.mixer = new Mixer();
+        this.mixer.master.chainEnd.connect(ctx.destination);
 
         /** @type {Clip[]} */
         this.clips = [];
@@ -159,7 +159,7 @@ class Project {
         this.patterns.push(oscPattern);
         this.selectItem(1);
 
-        this.effectRack.insert(new Reverb(), 0);
+        this.mixer.master.insert(new Reverb(), 0);
     }
 
     async render() {
@@ -178,15 +178,18 @@ class Project {
         const originalCtxStart = this.ctxStart;
         this.ctxStart = 0;
 
-        const originalEffectRack = this.effectRack;
-        this.effectRack = new EffectRack();
-        this.effectRack.chainEnd.connect(ctx.destination);
+        const originalMixer = this.mixer;
+        this.mixer = new Mixer();
+        this.mixer.master.chainEnd.connect(ctx.destination);
 
-        for (const fx of originalEffectRack.effects) {
-            /** @type {AudioEffect} */
-            const newFX = effectLookup[fx.type]();
-            newFX.paramsFromJson(fx.paramsToJson());
-            this.effectRack.append(newFX);
+        // Change this if you ever decide to make the number of tracks dynamic
+        for (let i = 0; i < originalMixer.allTracks.length; i++) {
+            for (const fx of originalMixer.allTracks[i].effects) {
+                /** @type {AudioEffect} */
+                const newFX = effectLookup[fx.type]();
+                newFX.paramsFromJson(fx.paramsToJson());
+                this.mixer.allTracks[i].append(newFX);
+            }
         }
 
         const originalSources = this.audioSources;
@@ -198,7 +201,10 @@ class Project {
             this.audioSources.push(newSource);
         }
 
-        await Promise.all(this.audioSources.concat(this.effectRack.effects).map(src => src.preloadAllResources()));
+        let serialize = this.audioSources;
+        this.mixer.allTracks.forEach(t => serialize = serialize.concat(t.effects));
+
+        await Promise.all(serialize.map(src => src.preloadAllResources()));
 
         this.clips.forEach(c => c.updateAudioContext());
 
@@ -241,7 +247,7 @@ class Project {
 
         ctx = originalCtx;
         this.ctxStart = originalCtxStart;
-        this.effectRack = originalEffectRack;
+        this.mixer = originalMixer;
         this.audioSources = originalSources;
         this.clips.forEach(c => c.updateAudioContext());
         this.isRendering = false;
@@ -271,10 +277,12 @@ class Project {
         for (const source of this.audioSources) {
             source.dispose();
         }
-        for (const effect of this.effectRack.effects) {
-            effect.dispose();
+        for (const track of this.mixer.allTracks) {
+            for (const effect of track.effects) {
+                effect.dispose();
+            }
         }
-        this.effectRack.chainEnd.disconnect(0);
+        this.mixer.master.chainEnd.disconnect(0);
         for (const item of this.timelineItems) {
             item.dispose();
         }
@@ -285,7 +293,7 @@ class Project {
         const obj = {
             "unitLength": this.unitLength,
             "audioSources": this.audioSources.map(e => e.toJson()),
-            "effectRack": this.effectRack.effects.map(e => e.toJson()),
+            "mixer": this.mixer.toJson(),
             "patterns": this.patterns.map(e => e.toJson()),
         };
         console.log(obj);
@@ -306,10 +314,18 @@ class Project {
         for (const e of j["audioSources"]) {
             project.audioSources.push(AudioSource.fromJson(e));
         }
+
+        // backwards compatibility, replaced by mixer
         const jEffects = j["effectRack"] ?? [];
-        for (let i = 0; i < jEffects.length; i++) {
-            project.effectRack.insert(AudioEffect.fromJson(jEffects[i]), i);
+        for (const fx of jEffects) {
+            project.mixer.master.append(AudioEffect.fromJson(fx));
         }
+
+        const jMixer = j["mixer"];
+        if (jMixer) {
+            project.mixer.fromJson(jMixer);
+        }
+
         for (const e of j["patterns"]) {
             project.patterns.push(Pattern.fromJson(e));
         }
