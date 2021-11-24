@@ -135,7 +135,6 @@ class AudioSource extends SerializableParams {
         this.controls.busInput.value = index;
         this.gain.disconnect();
         this.gain.connect(project.mixer.trackAt(index).chainStart);
-        console.log("connected to index " + index);
     }
 
     toJson() {

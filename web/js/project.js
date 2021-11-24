@@ -196,8 +196,7 @@ class Project {
         this.audioSources = [];
         for (const src of originalSources) {
             /** @type {AudioSource} */
-            const newSource = sourceLookup[src.type]();
-            newSource.paramsFromJson(src.paramsToJson());
+            const newSource = AudioSource.fromJson(src.toJson());
             this.audioSources.push(newSource);
         }
 
