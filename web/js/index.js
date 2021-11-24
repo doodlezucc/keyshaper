@@ -136,7 +136,9 @@ function initSelect(selectId, emptyOptionName, lookup, cb) {
 }
 
 function initSelects() {
-    initSelect("addEffect", "Add Effect...", effectLookup, e => project.mixer.selected.append(e));
+    initSelect("addEffect", "Add Effect...", effectLookup, e => {
+        project.mixer.selected.append(e);
+    });
     initSelect("addSource", "Add Audio Source...", sourceLookup, e => project.audioSources.push(e));
 }
 
@@ -151,6 +153,9 @@ function titleCase(s) {
 
 window.onload = () => {
     initSelects();
+    document.getElementById("mixerTrackSelector").oninput = function() {
+        project.mixer.selectedIndex = this.value;
+    }
     document.getElementById("render").onclick = async function() {
         this.disabled = true;
         await project.render();

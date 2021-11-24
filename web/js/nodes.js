@@ -49,6 +49,10 @@ class EffectControls extends ControlsWindow {
     constructor(templateId, name) {
         super(templateId, name, effectsContainer);
     }
+
+    updateTrack(index) {
+        this.elem.setAttribute("track", index);
+    }
 }
 
 class PlayingNote {
@@ -120,7 +124,7 @@ class AudioSource extends SerializableParams {
     set bus(index) {
         this.#bus = index;
         this.gain.disconnect();
-        this.gain.connect(project.mixer.tracks[index].chainStart);
+        this.gain.connect(project.mixer.trackAt(index).chainStart);
     }
 
     midi(ev) {

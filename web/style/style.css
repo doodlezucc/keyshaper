@@ -98,3 +98,10 @@ content {
 #fileUpload {
     display: none;
 }
+
+#mixer {
+    display: block;
+}
+#effects > * {
+    display: none;
+}
