@@ -43,6 +43,12 @@ class ControlsWindow {
 class AudioSourceControls extends ControlsWindow {
     constructor(templateId, name) {
         super(templateId, name, sourcesContainer);
+
+        this.busInput = document.createElement("input");
+        this.busInput.type = "number";
+        this.busInput.min = -1;
+        this.busInput.max = 3;
+        this.elem.children[0].append(this.busInput);
     }
 }
 class EffectControls extends ControlsWindow {
@@ -114,6 +120,9 @@ class AudioSource extends SerializableParams {
         this.gain = ctx.createGain();
         this.gain.gain.value = 0.2;
         this.bus = project.mixer.selectedIndex;
+        this.controls.busInput.oninput = () => {
+            this.bus = this.controls.busInput.valueAsNumber;
+        }
 
         /** @type {PlayingNote[]} */
         this.notes = [];
@@ -123,8 +132,24 @@ class AudioSource extends SerializableParams {
     get bus() { return this.#bus; }
     set bus(index) {
         this.#bus = index;
+        this.controls.busInput.value = index;
         this.gain.disconnect();
         this.gain.connect(project.mixer.trackAt(index).chainStart);
+        console.log("connected to index " + index);
+    }
+
+    toJson() {
+        return {
+            "bus": this.bus,
+            ...super.toJson()
+        };
+    }
+
+    static fromJson(j) {
+        /** @type {AudioSource} */
+        const serialized = super.fromJson(j);
+        serialized.bus = j["bus"] ?? -1;
+        return serialized;
     }
 
     midi(ev) {

@@ -8,11 +8,11 @@ class Oscillator extends AudioSource {
         this.sustain = 0.8;
         this.release = 0.2;
 
-        const select = this.controls.elem.querySelector("select");
+        const select = this.controls.content.querySelector("select");
         select.oninput = () => {
             this.oscType = select.value;
         };
-        const inputs = this.controls.elem.querySelectorAll("input");
+        const inputs = this.controls.content.querySelectorAll("input");
         registerInput(inputs[0], (v) => { this.attack = v; });
         registerInput(inputs[1], (v) => { this.decay = v; });
         registerInput(inputs[2], (v) => { this.sustain = v; });
@@ -21,9 +21,9 @@ class Oscillator extends AudioSource {
     }
 
     applyInputs() {
-        const select = this.controls.elem.querySelector("select");
+        const select = this.controls.content.querySelector("select");
         select.value = this.oscType;
-        const inputs = this.controls.elem.querySelectorAll("input");
+        const inputs = this.controls.content.querySelectorAll("input");
         inputs[0].value = this.attack;
         inputs[1].value = this.decay;
         inputs[2].value = this.sustain;

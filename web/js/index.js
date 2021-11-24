@@ -3,8 +3,6 @@ const sampleRate = 44100;
 /** @type {Project} */
 let project;
 
-let time1 = 0;
-let time2 = 0;
 let isInitialized = false;
 let recordOnInput = false;
 
@@ -12,8 +10,6 @@ let recordOnInput = false;
 let src;
 
 document.onkeydown = async (ev) => {
-    time1 = Date.now();
-    //console.log(time1);
     onUserGesture();
 
     if (ev.target instanceof HTMLInputElement) return;
@@ -85,9 +81,7 @@ function onMIDISuccess(midiAccess) {
 }
 
 function getMIDIMessage(midiMessage) {
-    console.log(midiMessage.data);
-    time2 = Date.now();
-    //console.log(time2 - time1);
+    // console.log(midiMessage.data);
 
     if (recordOnInput && project.isPaused) {
         project.isRecording = true;

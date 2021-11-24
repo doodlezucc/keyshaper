@@ -24,6 +24,10 @@ h1, h2, h3 {
     margin: 0;
 }
 
+input[type=number] {
+    width: 36px;
+}
+
 select {
     border-radius: 4px;
     font-family: inherit;
@@ -58,9 +62,13 @@ select:hover {
 }
 .window > span {
     background-color: #5866b8;
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 0 4px;
 }
 .window > span > p {
-    margin: 0 6px;
+    margin: 0;
 }
 
 content {
