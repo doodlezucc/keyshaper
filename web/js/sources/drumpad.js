@@ -47,6 +47,10 @@ class DrumPad extends AudioSource {
         }
     }
 
+    async preloadAllResources() {
+        await Promise.all(this.slots.map(slot => slot.loadAudioBuffer()));
+    }
+
     paramsToJson() {
         return {
             "slots": this.slots.map(slot => slot.toJson()),
@@ -137,7 +141,6 @@ class DrumPadSlot {
 
     async loadAudioBuffer() {
         if (!this.buffer) {
-            console.log(this.audio)
             if (this.audio instanceof Resource) {
                 const blob = await this.audio.safeValue();
                 this.buffer = await blobToAudioBuffer(blob);

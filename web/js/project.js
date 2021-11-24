@@ -198,6 +198,8 @@ class Project {
             this.audioSources.push(newSource);
         }
 
+        await Promise.all(this.audioSources.concat(this.effectRack.effects).map(src => src.preloadAllResources()));
+
         this.clips.forEach(c => c.updateAudioContext());
 
         const step = frameLength / 1000;

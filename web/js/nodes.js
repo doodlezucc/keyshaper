@@ -88,10 +88,7 @@ class SerializableParams {
     paramsToJson() { return {}; }
     paramsFromJson(j) { }
 
-    /** @param {AudioBuffer} buffer */
-    async storeAudioBuffer(name, buffer) {
-        localforage.setItem(name, buffer);
-    }
+    async preloadAllResources() { }
 }
 
 class AudioSource extends SerializableParams {
