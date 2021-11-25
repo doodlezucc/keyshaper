@@ -3,7 +3,7 @@ class Mixer {
 
     constructor() {
         this.master = new MixerTrack();
-        this.#index = -1;
+        this.selectedIndex = -1;
 
         /** @type {MixerTrack[]} */
         this.tracks = [

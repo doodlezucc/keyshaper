@@ -23,7 +23,7 @@ class Delay extends AudioEffect {
         this.dryGain.gain.value = 1;
         this.wetGain.gain.value = 1;
 
-        const inputs = this.controls.elem.querySelectorAll("input");
+        const inputs = this.controls.content.querySelectorAll("input");
         registerInput(inputs[0], (v) => { this.node.delayTime.value = v; });
         registerInput(inputs[1], (v) => { this.feedback.gain.value = v; });
         registerInput(inputs[2], (v) => { this.dryGain.gain.value = v; });
@@ -32,7 +32,7 @@ class Delay extends AudioEffect {
     }
 
     applyInputs() {
-        const inputs = this.controls.elem.querySelectorAll("input");
+        const inputs = this.controls.content.querySelectorAll("input");
         inputs[0].value = this.node.delayTime.value;
         inputs[1].value = this.feedback.gain.value;
         inputs[2].value = this.dryGain.gain.value;
