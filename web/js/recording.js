@@ -64,6 +64,102 @@ class Recorder {
     }
 }
 
+class Calibration {
+    static latencies = JSON.parse(window.localStorage.getItem("latencies") ?? "{}");
+
+    static saveLatencies() {
+        window.localStorage.setItem("latencies", JSON.stringify(this.latencies));
+    }
+
+    /**
+     * @param {MediaDeviceInfo} device
+     * @param {number} beats
+     * @param {number} bps
+     * @returns {Promise<number>}
+     */
+    static async runCalibration(device, beats, bps = 2) {
+        const metronomeBuffer = await loadAudioFromUrl("resources/drums/eternityperc13.wav");
+
+        const stream = await window.navigator.mediaDevices.getUserMedia({
+            audio: {
+                deviceId: device.deviceId,
+                echoCancellation: false,
+            }
+        });
+
+        beats += 8;
+
+        const mediaRecorder = new MediaRecorder(stream);
+        const offset = 0.2;
+        const firstBeatCtx = ctx.currentTime + offset;
+
+        mediaRecorder.start();
+
+        for (let i = 0; i < beats; i++) {
+            const metronomeNode = new AudioBufferSourceNode(ctx, { buffer: metronomeBuffer });
+            metronomeNode.connect(ctx.destination);
+            metronomeNode.start(firstBeatCtx + i / bps);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000 * (offset + beats / bps)));
+
+        const blob = await new Promise(resolve => {
+            mediaRecorder.ondataavailable = (ev) => {
+                resolve(ev.data);
+            }
+            mediaRecorder.stop();
+        });
+        const recorded = await blobToAudioBuffer(blob);
+        const evaluated = await Calibration.evaluate(recorded, bps, 8, offset);
+        console.log(evaluated);
+        this.latencies[device.groupId] = evaluated;
+
+        return evaluated;
+    }
+
+    /**
+     * By order of the peaky finders.
+     * @param {AudioBuffer} audioBuffer
+     * @param {number} bps
+     */
+    static async evaluate(audioBuffer, bps, ignore = 0, offset = 0) {
+        // only use first channel
+        const data = audioBuffer.getChannelData(0);
+        const sampleRate = audioBuffer.sampleRate;
+        const lookBehind = 200;
+
+        const start = sampleRate * ignore / bps;
+        const peakSeconds = [];
+
+        for (let i = start + lookBehind; i < audioBuffer.length; i++) {
+            let avg = 0;
+            for (let j = 1; j <= lookBehind; j++) {
+                avg += Math.abs(data[i - j]);
+            }
+            avg /= lookBehind;
+
+            if (Math.abs(data[i]) > avg * 2 + 0.02) {
+                peakSeconds.push(i / sampleRate - offset);
+                i += 0.5 * sampleRate / bps;
+            }
+        }
+
+        let latency = 0;
+        const beatDur = 1 / bps;
+        for (const peak of peakSeconds) {
+            let pLate = peak % beatDur;
+            if (pLate > beatDur * 0.8) {
+                // treat peak as being too early
+                pLate = -beatDur + pLate;
+            }
+
+            latency += pLate;
+        }
+
+        return latency / peakSeconds.length;
+    }
+}
+
 class Clip extends TimelineItem {
     constructor(blob) {
         super("recording", 1);

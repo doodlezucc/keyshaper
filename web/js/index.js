@@ -60,6 +60,14 @@ document.onkeydown = async (ev) => {
             case "i":
                 recordOnInput = !recordOnInput;
                 return console.log("Record on input: " + recordOnInput);
+            case "C":
+                if (project.isPaused) {
+                    const device = project.recorder.inputs[0];
+                    console.log("Calibrating " + device.label);
+                    await Calibration.runCalibration(device, 24);
+                    Calibration.saveLatencies();
+                }
+                return;
         }
     }
 }
