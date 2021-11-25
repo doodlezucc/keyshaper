@@ -36,7 +36,7 @@ document.onkeydown = async (ev) => {
     } else {
         switch (ev.key) {
             case "Backspace":
-                project.removeCurrentItem();
+                project.activeLoop.removeCurrentItem();
                 return ev.preventDefault();
             case "o":
                 return project.audioSources.push(new Oscillator());
@@ -45,14 +45,14 @@ document.onkeydown = async (ev) => {
             case "r":
                 return project.mixer.selected.append(new Reverb());
             case "p":
-                project.patterns.push(new Pattern(project.audioSources.length - 1, 2));
-                return project.selectItem(project.patterns.length - 1);
+                project.activeLoop.patterns.push(new Pattern(project.audioSources.length - 1, 2));
+                return project.activeLoop.selectItem(project.activeLoop.patterns.length - 1);
             case "R":
                 if (!project.recorder.isRecording) {
                     const index = 0;
                     console.log("Recording device " + project.recorder.inputs[index].label);
                     const rec = await project.recorder.startRecording(index);
-                    project.clips.push(rec);
+                    project.activeLoop.clips.push(rec);
                 } else {
                     project.recorder.stopRecording();
                 }
@@ -68,6 +68,19 @@ document.onkeydown = async (ev) => {
                     Calibration.saveLatencies();
                 }
                 return;
+        }
+
+        if (ev.key.match(/\d/)) {
+            const parsed = parseInt(ev.key) - 1;
+            if (project.activeLoopIndex == parsed) {
+                const loop = project.activeLoop;
+                loop.enabled = !loop.enabled;
+                console.log("Set loop " + parsed + " enabled: " + loop.enabled);
+            } else {
+                project.activeLoopIndex = parsed;
+                project.activeLoop.enabled = true;
+                console.log("Editing loop " + parsed);
+            }
         }
     }
 }

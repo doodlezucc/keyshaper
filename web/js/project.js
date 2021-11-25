@@ -1,7 +1,7 @@
 const frameLength = 60;
 
-const patternWidth = 300;
-const patternHeight = 100;
+const patternWidth = 200;
+const patternHeight = 40;
 
 const timelineCursor = document.getElementById("timelineCursor");
 
@@ -14,12 +14,14 @@ class Project {
         this.mixer = new Mixer();
         this.mixer.master.chainEnd.connect(ctx.destination);
 
-        /** @type {Clip[]} */
-        this.clips = [];
-
-        /** @type {Pattern[]} */
-        this.patterns = [];
-        this.currentItem = 0;
+        /** @type {Loop[]} */
+        this.loops = [
+            new Loop(),
+            new Loop(),
+            new Loop(),
+            new Loop(),
+        ];
+        this.activeLoopIndex = 0;
         this.ctxStart = 0;
         this.lastFrame = -1;
         this.isRendering = false;
@@ -49,29 +51,8 @@ class Project {
         }, 1000 / 60);
     }
 
-    selectItem(index) {
-        project.currentItem = Math.max(index, 0);
-        src = project.timelineItems[project.currentItem].audioSource;
-        console.log("Selected timeline item " + project.currentItem);
-    }
-
-    removeCurrentItem() {
-        if (this.timelineItems.length) {
-            const item = this.timelineItems[this.currentItem];
-            item.dispose();
-
-            if (item instanceof Pattern) {
-                this.patterns = this.patterns.filter(p => p != item);
-            } else {
-                this.clips = this.clips.filter(c => c != item);
-            }
-
-            if (this.timelineItems.length) {
-                this.selectItem(this.currentItem - 1);
-            } else {
-                this.zeroItemsEvent();
-            }
-        }
+    get activeLoop() {
+        return this.loops[this.activeLoopIndex];
     }
 
     zeroItemsEvent() {
@@ -105,19 +86,16 @@ class Project {
         this.isPaused = true;
         console.log("Pause");
 
-        for (const pattern of this.patterns) {
-            pattern.audioSource.onBlur(ctx.currentTime);
-        }
-        for (const c of this.clips) {
-            c.cancel(ctx.currentTime);
-        }
+        this.loops.forEach(l => l.onPause());
         timelineCursor.setAttribute("x1", 0);
         timelineCursor.setAttribute("x2", 0);
     }
 
     /** @type {TimelineItem[]} */
     get timelineItems() {
-        return this.patterns.concat(this.clips);
+        return this.loops.reduce((arr, loop) => {
+            return arr.concat(loop.clips, loop.patterns);
+        }, []);
     }
 
     bake() {
@@ -130,8 +108,8 @@ class Project {
             const start = this.lastFrame * frameLength / 1000;
             const end = start + frameLength / 1000;
 
-            for (const item of this.timelineItems) {
-                item.bake(start, end, this);
+            for (const loop of this.loops) {
+                loop.bake(start, end);
             }
         }
     }
@@ -152,11 +130,11 @@ class Project {
         ];
         drumPattern.scaling = 0.1875;
         drumPattern.redrawElem();
-        this.patterns.push(drumPattern);
+        this.activeLoop.patterns.push(drumPattern);
 
         const oscPattern = new Pattern(1, 2);
         oscPattern.redrawElem();
-        this.patterns.push(oscPattern);
+        this.activeLoop.patterns.push(oscPattern);
         this.selectItem(1);
 
         this.mixer.master.insert(new Reverb(), 0);
@@ -205,13 +183,13 @@ class Project {
 
         await Promise.all(serialize.map(src => src.preloadAllResources()));
 
-        this.clips.forEach(c => c.updateAudioContext());
+        this.loops.forEach(l => l.clips.forEach(c => c.updateAudioContext()));
 
         const step = frameLength / 1000;
         for (let t = 0; t < length; t += step) {
             const end = t + step;
-            for (const item of this.timelineItems) {
-                item.bake(t, end, this);
+            for (const loop of this.loops) {
+                loop.bake(t, end);
             }
         }
 
@@ -248,14 +226,14 @@ class Project {
         this.ctxStart = originalCtxStart;
         this.mixer = originalMixer;
         this.audioSources = originalSources;
-        this.clips.forEach(c => c.updateAudioContext());
+        this.loops.forEach(l => l.clips.forEach(c => c.updateAudioContext()));
         this.isRendering = false;
         console.log("Done!");
     }
 
     calculateFirstUnitLength() {
-        if (this.clips.length) {
-            project.unitLength = this.clips[0].audioBuffer.duration;
+        if (this.activeLoop.clips.length) {
+            project.unitLength = this.activeLoop.clips[0].audioBuffer.duration;
         } else {
             project.unitLength = ctx.currentTime - project.ctxStart;
         }
@@ -293,8 +271,7 @@ class Project {
             "unitLength": this.unitLength,
             "audioSources": this.audioSources.map(e => e.toJson()),
             "mixer": this.mixer.toJson(),
-            "patterns": this.patterns.map(e => e.toJson()),
-            "clips": this.clips.map(e => e.toJson()),
+            "loops": this.loops.map(e => e.toJson()),
         };
         console.log(obj);
         if (!name) {
@@ -326,11 +303,11 @@ class Project {
             project.mixer.fromJson(jMixer);
         }
 
-        for (const e of j["patterns"]) {
-            project.patterns.push(Pattern.fromJson(e));
-        }
-        for (const e of j["clips"] ?? []) {
-            project.clips.push(await Clip.fromJson(e));
+        project.loops = [];
+        for (const jLoop of j["loops"]) {
+            const loop = new Loop();
+            project.loops.push(loop);
+            await loop.fromJson(jLoop);
         }
         return project;
     }
@@ -340,8 +317,8 @@ class TimelineItem {
     constructor(className, length = 1) {
         this.elem = document.createElementNS("http://www.w3.org/2000/svg", "g");
         this.elem.classList.add(className);
-        this.elem.onclick = (ev) => {
-            project.selectItem(project.timelineItems.indexOf(this));
+        this.elem.onclick = () => {
+            project.activeLoop.selectItem(project.activeLoop.timelineItems.indexOf(this));
         };
 
         const off = patternHeight * project.timelineItems.length;
@@ -369,7 +346,7 @@ class TimelineItem {
         this.elem.remove();
     }
 
-    bake(start, end, project) {
+    bake(start, end, loop) {
         console.warn('Unhandled baking');
     }
 }
@@ -450,8 +427,13 @@ class Pattern extends TimelineItem {
         }
     }
 
-    bake(start, end, project) {
-        const loopLength = this.length * project.unitLength;
+    /**
+     * @param {number} start
+     * @param {number} end
+     * @param {Loop} loop
+     */
+    bake(start, end, loop) {
+        const loopLength = loop.length * project.unitLength;
         const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
         const wStart = start % loopLength;
         const wEnd = end % loopLength;

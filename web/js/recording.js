@@ -248,12 +248,12 @@ class Clip extends TimelineItem {
     }
 
     /**
-     * @param {number} start 
-     * @param {number} end 
-     * @param {Project} project 
+     * @param {number} start
+     * @param {number} end
+     * @param {Loop} loop
      */
-    bake(start, end, project) {
-        const loopLength = project.longestItem * project.unitLength;
+    bake(start, end, loop) {
+        const loopLength = loop.length * project.unitLength;
         const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
         const wStart = start % loopLength;
         const wEnd = end % loopLength;
