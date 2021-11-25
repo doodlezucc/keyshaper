@@ -294,6 +294,7 @@ class Project {
             "audioSources": this.audioSources.map(e => e.toJson()),
             "mixer": this.mixer.toJson(),
             "patterns": this.patterns.map(e => e.toJson()),
+            "clips": this.clips.map(e => e.toJson()),
         };
         console.log(obj);
         if (!name) {
@@ -302,7 +303,7 @@ class Project {
         window.localStorage.setItem(name, JSON.stringify(obj));
     }
 
-    static load(name) {
+    static async load(name) {
         project.dispose();
 
         const j = JSON.parse(window.localStorage.getItem(name));
@@ -327,6 +328,9 @@ class Project {
 
         for (const e of j["patterns"]) {
             project.patterns.push(Pattern.fromJson(e));
+        }
+        for (const e of j["clips"] ?? []) {
+            project.clips.push(await Clip.fromJson(e));
         }
         return project;
     }

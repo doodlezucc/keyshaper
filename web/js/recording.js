@@ -32,9 +32,10 @@ class Recorder {
                 project.play();
             }
 
+            const device = this.inputs[deviceIndex];
             const stream = await window.navigator.mediaDevices.getUserMedia({
                 audio: {
-                    deviceId: this.inputs[deviceIndex].deviceId,
+                    deviceId: device.deviceId,
                     echoCancellation: false,
                 }
             });
@@ -49,7 +50,13 @@ class Recorder {
                 this.mediaRecorder.start();
                 this.mediaRecorder.ondataavailable = (ev) => {
                     playbackNode.disconnect();
-                    resolve(new Clip(ev.data));
+                    const latency = Calibration.latencies[devicePersistentId(device)];
+                    const name = "recording-" + dateToFileString(new Date());
+                    const resource = new Resource(name, name, ev.data);
+                    resource.save();
+                    const clip = new Clip(resource, latency);
+                    clip._init();
+                    resolve(clip);
                 }
             });
         }
@@ -62,6 +69,14 @@ class Recorder {
             project.pause();
         }
     }
+}
+
+/**
+ * @param {MediaDeviceInfo} device
+ */
+function devicePersistentId(device) {
+    const descriptors = device.label.match(/(?<=\().+?(?=\))/g);
+    return descriptors[descriptors.length - 1];
 }
 
 class Calibration {
@@ -112,7 +127,7 @@ class Calibration {
         const recorded = await blobToAudioBuffer(blob);
         const evaluated = await Calibration.evaluate(recorded, bps, 8, offset);
         console.log(evaluated);
-        this.latencies[device.groupId] = evaluated;
+        this.latencies[devicePersistentId(device)] = evaluated;
 
         return evaluated;
     }
@@ -161,52 +176,67 @@ class Calibration {
 }
 
 class Clip extends TimelineItem {
-    constructor(blob) {
+    constructor(resource, sampleOffset = 0) {
         super("recording", 1);
 
-        /** @type {Blob} */
-        this.blob = blob;
+        /** @type {Resource} */
+        this.resource = resource;
 
         this.isPlaying = false;
 
         this.start = 0;
-        this.sampleOffset = 0;
+        this.sampleOffset = sampleOffset ?? 0;
 
         this.updateAudioContext();
 
         this.peaks = document.createElementNS("http://www.w3.org/2000/svg", "path");
         this.elem.append(this.peaks);
-
-        this._init();
     }
 
-    _init() {
+    toJson() {
+        return {
+            "resource": this.resource.id,
+            "start": this.start,
+            "length": this.length,
+            "scaling": this.scaling,
+            "sampleOffset": this.sampleOffset,
+        };
+    }
+
+    static async fromJson(j) {
+        const clip = new Clip(Resource.lookup(j["resource"]), j["sampleOffset"]);
+        clip.start = j["start"];
+        clip.length = j["length"];
+        clip.scaling = j["scaling"];
+        await clip._init();
+        return clip;
+    }
+
+    async _init() {
         const time = Date.now();
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            this.audioBuffer = await ctx.decodeAudioData(reader.result);
-            if (project.unitLength == 1000) {
-                this.length = 1;
-                project.calculateFirstUnitLength();
-            } else {
-                this.length = this.audioBuffer.duration / project.unitLength;
-                this.redrawElem();
-            }
-            console.log("Read recording in " + (Date.now() - time) + "ms.");
+        this.audioBuffer = await loadAudioFromResource(this.resource);
+        if (project.unitLength == 1000) {
+            this.length = 1;
+            project.calculateFirstUnitLength();
+        } else {
+            this.length = this.audioBuffer.duration / project.unitLength;
+            this.redrawElem();
         }
-        reader.readAsArrayBuffer(this.blob);
+        console.log("Read recording in " + (Date.now() - time) + "ms.");
     }
 
     redrawElem() {
         super.redrawElem();
 
         const arr = this.audioBuffer.getChannelData(0);
+        const cutStart = this.sampleOffset * this.audioBuffer.sampleRate;
         let svgData = "M 0 " + (0.5 * patternHeight);
 
         const steps = 10000;
         for (let i = 0; i < steps; i++) {
             const x = patternWidth * this.length * i / steps;
-            const y = (0.5 + 0.5 * arr[Math.floor(arr.length * i / steps)]) * patternHeight;
+            const data = arr[Math.floor(cutStart + (arr.length - cutStart) * i / steps)];
+            const y = (0.5 + 0.5 * data) * patternHeight;
             svgData += " L " + x + " " + y;
         }
 

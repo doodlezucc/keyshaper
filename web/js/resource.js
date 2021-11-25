@@ -1,13 +1,13 @@
 /** @type {Resource[]} */
 const resources = [];
 const urlAudioBuffers = {};
+const resourceAudioBuffers = {};
 
 localforage.config({
     storeName: "keyshaper",
     version: 1,
 });
 localforage.iterate((v, k) => {
-    console.log([k, v]);
     resources.push(new Resource(k, v.name, v.value));
 });
 
@@ -44,6 +44,18 @@ class Resource {
 }
 
 /**
+ * @param {Date} d
+ */
+function dateToFileString(d) {
+    pad = function(v) {
+        return ("" + v).padStart(2, "0");
+    }
+
+    return `${d.getFullYear()}-${pad(d.getMonth())}-${pad(d.getDay())}_` +
+        `${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+}
+
+/**
  * @param {string} url
  * @param {boolean} refresh
  * @returns {Promise<AudioBuffer>}
@@ -64,6 +76,25 @@ function loadAudioFromUrl(url, refresh = false) {
         request.responseType = "arraybuffer";
         request.open("GET", url);
         request.send();
+    });
+}
+
+/**
+ * @param {Resource} resource
+ * @param {boolean} refresh
+ * @returns {Promise<AudioBuffer>}
+ */
+function loadAudioFromResource(resource, refresh = false) {
+    return new Promise(async (resolve, reject) => {
+        if (!refresh && resourceAudioBuffers[resource]) {
+            resolve(resourceAudioBuffers[resource]);
+        }
+
+        const blob = await resource.safeValue();
+        const arrayBuffer = await blob.arrayBuffer();
+        const buffer = await ctx.decodeAudioData(arrayBuffer);
+        resourceAudioBuffers[resource] = buffer;
+        resolve(buffer);
     });
 }
 
