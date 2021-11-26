@@ -257,6 +257,12 @@ class AudioEffect extends SerializableParams {
         this.chainStart = effectChain.chainStart;
         this.chainEnd = effectChain.chainEnd;
         this.controls = new EffectControls(type, name);
+        this.controls.elem.onmousedown = (ev) => {
+            if (ev.button == 1) {
+                const myTrack = project.mixer.allTracks.find(t => t.effects.some(fx => fx == this));
+                myTrack.remove(this);
+            }
+        }
     }
 
     dispose() {
@@ -297,6 +303,25 @@ class EffectRack extends NodeChain {
         }
 
         this.effects.splice(index, 0, effect);
+    }
+
+    /**
+     * @param {AudioEffect} effect
+     */
+    remove(effect) {
+        const index = this.effects.indexOf(effect);
+        if (index < 0) return;
+
+        effect.dispose();
+
+        const previous = index == 0 ? this.chainStart : this.effects[index - 1].chainEnd;
+        const next = index + 1 == this.effects.length ? this.chainEnd : this.effects[index + 1].chainStart;
+
+        previous.disconnect();
+        effect.chainEnd.disconnect();
+        previous.connect(next);
+
+        this.effects.splice(index, 1);
     }
 
     append(effect) {
