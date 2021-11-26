@@ -369,10 +369,16 @@ class Pattern extends TimelineItem {
         return project.audioSources[this.audioSourceIndex];
     }
 
+    _sortNotes() {
+        // Sort notes so that the last note is in first place
+        this.notes.sort((a, b) => b.start - a.start);
+    }
+
     registerNote(pitch, velocity, when) {
         const time = ((when - project.ctxStart) % (this.length * project.unitLength)) / this.scaling;
         const note = new Note(pitch, velocity, time, 1000);
         this.notes.push(note);
+        this._sortNotes();
         this.registering.push(note);
         this.redrawElem();
     }
@@ -445,27 +451,29 @@ class Pattern extends TimelineItem {
             const ctxNStart = loopStart + nStart;
             const ctxNEnd = loopStart + nEnd;
 
-            if (wrap) {
-                if (nStart >= wStart) {
-                    this._noteEvent(note, true, ctxNStart);
-                }
-                else if (nStart < wEnd) {
-                    this._noteEvent(note, true, ctxNStart + loopLength);
-                }
-                if (nEnd >= wStart) {
-                    if (!this.registering.some(n => n == note)) {
+            if (nStart < loopLength) {
+                if (wrap) {
+                    if (nStart >= wStart) {
+                        this._noteEvent(note, true, ctxNStart);
+                    }
+                    else if (nStart < wEnd) {
+                        this._noteEvent(note, true, ctxNStart + loopLength);
+                    }
+                    if (nEnd >= wStart) {
+                        if (!this.registering.some(n => n == note)) {
+                            this._noteEvent(note, false, loopStart + loopLength);
+                        }
+                    }
+                    else if (nEnd < wEnd) {
+                        this._noteEvent(note, false, ctxNEnd + loopLength);
+                    }
+                } else {
+                    if (nStart >= wStart && nStart < wEnd) {
+                        this._noteEvent(note, true, ctxNStart);
+                    }
+                    if (nEnd >= wStart && nEnd < wEnd) {
                         this._noteEvent(note, false, ctxNEnd);
                     }
-                }
-                else if (nEnd < wEnd) {
-                    this._noteEvent(note, false, ctxNEnd + loopLength);
-                }
-            } else {
-                if (nStart >= wStart && nStart < wEnd) {
-                    this._noteEvent(note, true, ctxNStart);
-                }
-                if (nEnd >= wStart && nEnd < wEnd) {
-                    this._noteEvent(note, false, ctxNEnd);
                 }
             }
         }
@@ -494,6 +502,7 @@ class Pattern extends TimelineItem {
         for (const note of j["notes"]) {
             pattern.notes.push(Note.fromJson(note));
         }
+        pattern._sortNotes();
         pattern.redrawElem();
         return pattern;
     }
