@@ -25,6 +25,10 @@ class Loop {
         return this.patterns.concat(this.clips);
     }
 
+    updateLongestItem() {
+        this.length = this.timelineItems.reduce((v, item) => v += item.length, 0);
+    }
+
     selectItem(index) {
         this.currentItem = Math.max(index, 0);
         src = this.timelineItems[this.currentItem].audioSource;
@@ -49,6 +53,8 @@ class Loop {
                     project.zeroItemsEvent();
                 }
             }
+
+            this.updateLongestItem();
         }
     }
 
@@ -87,5 +93,6 @@ class Loop {
         for (const e of j["clips"]) {
             this.clips.push(await Clip.fromJson(e));
         }
+        this.updateLongestItem();
     }
 }

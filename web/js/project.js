@@ -135,6 +135,7 @@ class Project {
         const oscPattern = new Pattern(1, 2);
         oscPattern.redrawElem();
         this.activeLoop.patterns.push(oscPattern);
+        this.activeLoop.updateLongestItem();
         this.selectItem(1);
 
         this.mixer.master.insert(new Reverb(), 0);
@@ -236,6 +237,7 @@ class Project {
             project.unitLength = this.activeLoop.clips[0].audioBuffer.duration;
         } else {
             project.unitLength = ctx.currentTime - project.ctxStart;
+            project.activeLoop.patterns[0].length = 1;
         }
 
         let bpm = 4 * 60 / project.unitLength;
@@ -244,6 +246,7 @@ class Project {
             bpm *= 2;
             project.timelineItems[0].length *= 2;
         }
+        project.activeLoop.updateLongestItem();
         project.redrawTimelineGuides();
         project.timelineItems[0].redrawElem();
 
@@ -439,7 +442,7 @@ class Pattern extends TimelineItem {
      * @param {Loop} loop
      */
     bake(start, end, loop) {
-        const loopLength = loop.length * project.unitLength;
+        const loopLength = Math.min(this.length, loop.length) * project.unitLength;
         const loopStart = project.ctxStart + Math.floor(start / loopLength) * loopLength;
         const wStart = start % loopLength;
         const wEnd = end % loopLength;

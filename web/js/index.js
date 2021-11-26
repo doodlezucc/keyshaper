@@ -45,7 +45,8 @@ document.onkeydown = async (ev) => {
             case "r":
                 return project.mixer.selected.append(new Reverb());
             case "p":
-                project.activeLoop.patterns.push(new Pattern(project.audioSources.length - 1, 2));
+                project.activeLoop.patterns.push(new Pattern(project.audioSources.length - 1, 4));
+                project.activeLoop.updateLongestItem();
                 return project.activeLoop.selectItem(project.activeLoop.patterns.length - 1);
             case "R":
                 if (!project.recorder.isRecording) {
@@ -53,6 +54,7 @@ document.onkeydown = async (ev) => {
                     console.log("Recording device " + project.recorder.inputs[index].label);
                     const rec = await project.recorder.startRecording(index);
                     project.activeLoop.clips.push(rec);
+                    project.activeLoop.updateLongestItem();
                 } else {
                     project.recorder.stopRecording();
                 }

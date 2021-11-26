@@ -198,6 +198,7 @@ class AudioSource extends SerializableParams {
         if (doRecord && !project.isPaused) {
             if (!project.timelineItems.length) {
                 project.activeLoop.patterns.push(new Pattern(0, 1));
+                project.activeLoop.updateLongestItem();
             }
             project.activeLoop.patterns[project.activeLoop.currentItem].registerNote(note, velocity, when);
         }
